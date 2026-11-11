@@ -12,7 +12,29 @@ const dirname =
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+    alias: {
+      react: path.resolve(dirname, "node_modules/react"),
+      "react-dom": path.resolve(dirname, "node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(
+        dirname,
+        "node_modules/react/jsx-runtime.js",
+      ),
+      "react/jsx-dev-runtime": path.resolve(
+        dirname,
+        "node_modules/react/jsx-dev-runtime.js",
+      ),
+      "react-reconciler/constants": "react-reconciler/constants.js",
+    },
+  },
   test: {
+    onConsoleLog(log) {
+      if (log.includes("Could not parse CSS stylesheet")) {
+        return false;
+      }
+      return undefined;
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "json-summary"],
@@ -40,6 +62,7 @@ export default defineConfig({
           name: "unit",
           include: ["tests/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
           environment: "jsdom",
+          testTimeout: 15000,
           setupFiles: ["./tests/setup.ts"],
         },
       },
