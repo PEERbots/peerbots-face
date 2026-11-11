@@ -1,0 +1,97 @@
+{
+  "frames": {
+    "concerned_l.png": {
+      "frame": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "concerned_r.png": {
+      "frame": { "x": 512, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "happy_l.png": {
+      "frame": { "x": 1024, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "happy_r.png": {
+      "frame": { "x": 1536, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "neutral_l.png": {
+      "frame": { "x": 0, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "neutral_r.png": {
+      "frame": { "x": 512, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sad_l.png": {
+      "frame": { "x": 1024, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sad_r.png": {
+      "frame": { "x": 1536, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sleepy_l.png": {
+      "frame": { "x": 0, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sleepy_r.png": {
+      "frame": { "x": 512, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "surprised_l.png": {
+      "frame": { "x": 1024, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "surprised_r.png": {
+      "frame": { "x": 1536, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    }
+  },
+  "meta": {
+    "app": "https://www.codeandweb.com/texturepacker",
+    "version": "1.1",
+    "image": "robotic_spritesheet.png",
+    "format": "RGBA8888",
+    "size": { "w": 2048, "h": 1536 },
+    "scale": "1",
+    "smartupdate": "$TexturePacker:SmartUpdate:83d03d05b84424dd6cef1a6a810db72a:54e7d15e658e2ddce941ef015f2cafdb:b46de55e2d1807ec65c249878a0c5a93$"
+  }
+}

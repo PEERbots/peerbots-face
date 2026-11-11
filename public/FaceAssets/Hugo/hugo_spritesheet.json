@@ -1,0 +1,97 @@
+{
+  "frames": {
+    "concerned_l.png": {
+      "frame": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "concerned_r.png": {
+      "frame": { "x": 512, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "happy_l.png": {
+      "frame": { "x": 1024, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "happy_r.png": {
+      "frame": { "x": 1536, "y": 0, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "neutral_l.png": {
+      "frame": { "x": 0, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "neutral_r.png": {
+      "frame": { "x": 512, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sad_l.png": {
+      "frame": { "x": 1024, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sad_r.png": {
+      "frame": { "x": 1536, "y": 512, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sleepy_l.png": {
+      "frame": { "x": 0, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "sleepy_r.png": {
+      "frame": { "x": 512, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "surprised_l.png": {
+      "frame": { "x": 1024, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    },
+    "surprised_r.png": {
+      "frame": { "x": 1536, "y": 1024, "w": 512, "h": 512 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 512, "h": 512 },
+      "sourceSize": { "w": 512, "h": 512 }
+    }
+  },
+  "meta": {
+    "app": "https://www.codeandweb.com/texturepacker",
+    "version": "1.1",
+    "image": "hugo_spritesheet.png",
+    "format": "RGBA8888",
+    "size": { "w": 2048, "h": 1536 },
+    "scale": "1",
+    "smartupdate": "$TexturePacker:SmartUpdate:724265d65a2120fe1b47b0f8d78fedf8:7202eca73c979805dfaf9603b7d42469:a5df1be103379b831ca6d9b5fcc051d1$"
+  }
+}
