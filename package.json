@@ -1,6 +1,6 @@
 {
   "name": "@peerbots/face",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Canonical Peerbots Robot Face rendering engine, assets, viseme sync, TTS audio cache, and modular Zustand slices.",
   "type": "module",
   "license": "GPL-3.0-only",
@@ -53,7 +53,11 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "check:fast": "npm run typecheck && npm run lint",
-    "check:task": "npm run check:fast && npm run test:coverage && npm run build"
+    "check:task": "npm run check:fast && npm run test:coverage && npm run build",
+    "check:ci": "npm run check:fast && npm run test:coverage && npm run test:storybook",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "npm run build && changeset publish"
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",
@@ -72,6 +76,8 @@
   },
   "devDependencies": {
     "@base-ui/react": "^1.7.0",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
     "@chromatic-com/storybook": "^5.1.1",
     "@eslint/js": "^9.19.0",
     "@peerbots/core": "^1.2.0",

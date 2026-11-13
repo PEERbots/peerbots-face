@@ -1,0 +1,61 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release PR & npm Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verification & build package
+        run: npm run check:task
+
+      - name: Check npm publish token availability
+        id: check_npm
+        env:
+          NPM_TOKEN_PRESENT: ${{ secrets.NPM_TOKEN != '' }}
+        run: |
+          echo "has_npm_token=$NPM_TOKEN_PRESENT" >> "$GITHUB_OUTPUT"
+          if [ "$NPM_TOKEN_PRESENT" != "true" ]; then
+            echo "::notice::NPM_TOKEN secret is not set yet; Changesets will still maintain the 'Version Packages' Release PR, and npm publish will activate once NPM_TOKEN is configured."
+          fi
+
+      - name: Create Release Pull Request or Publish to npm
+        if: steps.check_npm.outputs.has_npm_token == 'true'
+        id: changesets_publish
+        uses: changesets/action@v1
+        with:
+          publish: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create or Update Release Pull Request (Pre-NPM_TOKEN)
+        if: steps.check_npm.outputs.has_npm_token != 'true'
+        id: changesets_pr_only
+        uses: changesets/action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

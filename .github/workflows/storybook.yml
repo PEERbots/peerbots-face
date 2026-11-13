@@ -1,0 +1,54 @@
+name: Storybook Preview & Publishing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  chromatic:
+    name: Run Chromatic
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Chromatic token availability
+        id: check_chromatic
+        env:
+          CHROMATIC_PRESENT: ${{ secrets.CHROMATIC_PROJECT_TOKEN != '' }}
+        run: |
+          echo "configured=$CHROMATIC_PRESENT" >> "$GITHUB_OUTPUT"
+          if [ "$CHROMATIC_PRESENT" != "true" ]; then
+            echo "::notice::CHROMATIC_PROJECT_TOKEN is not configured; skipping Chromatic publish."
+          fi
+
+      - name: Checkout repository
+        if: steps.check_chromatic.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js from .nvmrc
+        if: steps.check_chromatic.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        if: steps.check_chromatic.outputs.configured == 'true'
+        run: npm ci
+
+      - name: Publish to Chromatic
+        if: steps.check_chromatic.outputs.configured == 'true'
+        id: chromatic
+        uses: chromaui/action@latest
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}

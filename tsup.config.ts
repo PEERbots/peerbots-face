@@ -21,11 +21,7 @@ export default defineConfig([
       vizij: "src/components/VizijFaceView.tsx",
     },
     format: ["esm"],
-    dts: {
-      compilerOptions: {
-        ignoreDeprecations: "6.0",
-      },
-    },
+    dts: true,
     minify: false,
     clean: false,
     sourcemap: true,

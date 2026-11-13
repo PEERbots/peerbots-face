@@ -1,0 +1,43 @@
+name: Build, Test & Accessibility CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, Lint, Coverage, Storybook A11y & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium for Storybook a11y tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run full quality, coverage & WCAG 2.1 AA Storybook gates (CONSTRAINTS.md)
+        run: npm run check:ci
+
+      - name: Build package (dist/)
+        run: npm run build
+
+      - name: Build static Storybook bundle
+        run: npm run build-storybook

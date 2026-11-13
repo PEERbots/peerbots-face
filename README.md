@@ -14,3 +14,18 @@ Canonical Peerbots Robot Face rendering engine, assets, viseme & amplitude synch
 ## Assets Setup
 
 Copy or serve `node_modules/@peerbots/face/public/FaceAssets` at `/FaceAssets` in your application's public directory (or pass a custom `assetBaseUrl` to `createPeerbotsFaceStore({ assetBaseUrl })`).
+
+## Development & CI
+
+```bash
+npm ci
+npm run check:ci        # Typecheck, ESLint, Vitest coverage (>=80%), and Playwright Storybook WCAG 2.1 AA tests
+npm run build           # Build ESM + CJS + DTS bundles to dist/
+npm run build-storybook # Build static Storybook documentation
+```
+
+## Releases & Publishing (Changesets)
+
+1. Record changes with `npm run changeset` and commit the generated `.changeset/*.md` file.
+2. Pushing to `main` runs `.github/workflows/publish.yml`, which opens or updates the **"Version Packages"** pull request.
+3. Merging **"Version Packages"** (with `NPM_TOKEN` configured in GitHub Actions secrets) builds `dist/` and publishes `@peerbots/face` to npm.
