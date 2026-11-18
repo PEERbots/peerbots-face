@@ -42,6 +42,18 @@ const config: StorybookConfig = {
       "react-dom": path.resolve(dirname, "../node_modules/react-dom"),
       "react-reconciler/constants": "react-reconciler/constants.js",
     };
+    viteConfig.build = viteConfig.build ?? {};
+    viteConfig.build.rollupOptions = viteConfig.build.rollupOptions ?? {};
+    const existingExternal = viteConfig.build.rollupOptions.external;
+    const flowExternals = [
+      "@peerbots/core/flow",
+      "@xyflow/react",
+      "@xyflow/react/dist/style.css",
+      "@dagrejs/dagre",
+    ];
+    viteConfig.build.rollupOptions.external = Array.isArray(existingExternal)
+      ? [...existingExternal, ...flowExternals]
+      : flowExternals;
     return viteConfig;
   },
 };

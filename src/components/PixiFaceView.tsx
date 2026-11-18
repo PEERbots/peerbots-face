@@ -51,4 +51,12 @@ export function PixiFaceView({
   );
 }
 
+export { FaceContainer } from "./FaceContainer";
+export { FaceEyes } from "./FaceEyes";
+export { FaceMouth } from "./FaceMouth";
+export { FaceText } from "./FaceText";
+export { FaceBackground } from "./FaceBackground";
+export { FaceFullScreenButton } from "./FaceFullScreenButton";
+export { FaceScrollToTopButton } from "./FaceScrollToTopButton";
 export default PixiFaceView;
+

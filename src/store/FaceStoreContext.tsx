@@ -33,9 +33,26 @@ export function FaceStoreProvider({
   );
 }
 
+let activeGlobalFaceStore: PeerbotsFaceStoreApi = globalFaceStore;
+
+/**
+ * Configures the fallback global face store used when `useFaceStore` or `useFaceStoreInstance`
+ * is invoked outside a `<FaceStoreProvider>` tree (or via `useFaceStore.getState()`).
+ */
+export function setGlobalFaceStore(store: PeerbotsFaceStoreApi): void {
+  activeGlobalFaceStore = store;
+}
+
+/**
+ * Returns the currently configured fallback global face store.
+ */
+export function getGlobalFaceStore(): PeerbotsFaceStoreApi {
+  return activeGlobalFaceStore;
+}
+
 export function useFaceStoreInstance(): PeerbotsFaceStoreApi {
   const context = useContext(FaceStoreContext);
-  return context ?? globalFaceStore;
+  return context ?? activeGlobalFaceStore;
 }
 
 export interface UseFaceStoreHook {
@@ -51,9 +68,10 @@ function useFaceStoreBase<T>(selector: (state: PeerbotsFaceStore) => T): T {
 }
 
 export const useFaceStore: UseFaceStoreHook = Object.assign(useFaceStoreBase, {
-  getState: () => globalFaceStore.getState(),
-  setState: ((...args: Parameters<typeof globalFaceStore.setState>) =>
-    globalFaceStore.setState(...args)) as PeerbotsFaceStoreApi["setState"],
-  subscribe: ((...args: Parameters<typeof globalFaceStore.subscribe>) =>
-    globalFaceStore.subscribe(...args)) as PeerbotsFaceStoreApi["subscribe"],
+  getState: () => activeGlobalFaceStore.getState(),
+  setState: ((...args: Parameters<typeof activeGlobalFaceStore.setState>) =>
+    activeGlobalFaceStore.setState(...args)) as PeerbotsFaceStoreApi["setState"],
+  subscribe: ((...args: Parameters<typeof activeGlobalFaceStore.subscribe>) =>
+    activeGlobalFaceStore.subscribe(...args)) as PeerbotsFaceStoreApi["subscribe"],
 });
+

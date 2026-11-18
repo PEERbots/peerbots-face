@@ -43,6 +43,12 @@ export interface FaceUiLabels {
   voiceSelectorLanguage: string;
   voiceSelectorVoice: string;
   unknownFaceType: string;
+  sendEmotion: string;
+  sendColor: string;
+  textToSpeakPlaceholder: string;
+  textToSpeakAria: string;
+  speak: string;
+  testFace: string;
 }
 
 export const DEFAULT_FACE_UI_LABELS: FaceUiLabels = {
@@ -90,6 +96,12 @@ export const DEFAULT_FACE_UI_LABELS: FaceUiLabels = {
   voiceSelectorLanguage: "Language",
   voiceSelectorVoice: "Voice",
   unknownFaceType: "Unknown Face Type",
+  sendEmotion: "Send Emotion",
+  sendColor: "Send Color",
+  textToSpeakPlaceholder: "Enter text to speak",
+  textToSpeakAria: "Text to speak",
+  speak: "Speak",
+  testFace: "Test Face",
 };
 
 export function resolveFaceUiLabels(
