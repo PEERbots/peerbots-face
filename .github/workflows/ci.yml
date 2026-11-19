@@ -32,7 +32,10 @@ jobs:
 
       - name: Verify Changeset on Pull Requests
         if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
-        run: npx changeset status
+        run: |
+          git fetch origin main:main --depth=50
+          find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | grep -q . || (echo "::error::No changeset found in .changeset/. Run 'npx changeset' (or 'npx changeset add --empty') before opening a PR." && exit 1)
+          npx changeset status --since=main
 
       - name: Install Playwright Chromium for Storybook a11y tests
         run: npx playwright install --with-deps chromium
