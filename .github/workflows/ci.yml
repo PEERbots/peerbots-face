@@ -30,6 +30,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Changeset on Pull Requests
+        if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
+        run: npx changeset status
+
       - name: Install Playwright Chromium for Storybook a11y tests
         run: npx playwright install --with-deps chromium
 
