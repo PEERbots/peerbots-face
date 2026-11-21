@@ -1,5 +1,11 @@
 # @peerbots/face
 
+## 0.3.0
+
+### Minor Changes
+
+- [#5](https://github.com/PEERbots/peerbots-face/pull/5) [`34d2986`](https://github.com/PEERbots/peerbots-face/commit/34d2986f6d145ba17da8188fad8ad427ac00e4b7) Thanks [@sbeleidy](https://github.com/sbeleidy)! - Add cross-browser / iPhone Safari fullscreen support (`useFullscreen`, `FaceFullscreenContext`, CSS pseudo-fullscreen fallback in `FaceView` and `FaceFullScreenButton`) and Mobile Safari audio reliability (`AudioManager` singleton with persistent `HTMLAudioElement` and user-gesture `unlock()`, iOS / suspended `AudioContext` bypass in `AudioAnalyzer`, `NotAllowedError` recovery and `unlockAudio()` in `faceSpeechSlice`, and removing whitespace `SpeechSynthesisUtterance(" ")` priming in `FaceAudioPrompt` and `CharacterSelectionControls`).
+
 ## 0.2.0
 
 ### Minor Changes
