@@ -1,57 +1,40 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useRef } from "react";
 import { useApplication, useExtend } from "@pixi/react";
 import { Container, Graphics, Rectangle } from "pixi.js";
 import { iconPaths } from "@peerbots/core";
+import {
+  useFaceFullscreenContext,
+  useFullscreen,
+} from "../hooks/useFullscreen";
 
 export function FaceFullScreenButton() {
   useExtend({ Graphics, Container });
   const { app } = useApplication();
-  const [fullScreen, setFullScreen] = useState<boolean>(false);
+  const contextFullscreen = useFaceFullscreenContext();
+  const fallbackRef = useRef<HTMLElement | null>(null);
+  const fallbackFullscreen = useFullscreen(fallbackRef);
 
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-    const handleFullscreenChange = () => {
-      setFullScreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
+  const isFullscreen = contextFullscreen
+    ? contextFullscreen.isFullscreen
+    : fallbackFullscreen.isFullscreen;
 
   const toggleFullScreen = useCallback(() => {
-    if (typeof document === "undefined") {
+    if (contextFullscreen) {
+      void contextFullscreen.toggleFullscreen();
       return;
     }
-    if (fullScreen) {
-      void document.exitFullscreen().catch((err) => {
-        console.warn("Exit fullscreen error:", err);
-      });
-    } else {
-      const container = document.getElementById("face-view-container");
-      if (container) {
-        container.requestFullscreen().catch((err) => {
-          console.warn("Container fullscreen error:", err);
-          if (app?.canvas) {
-            void app.canvas.requestFullscreen().catch((canvasErr) => {
-              console.warn("Canvas fullscreen error:", canvasErr);
-            });
-          }
-        });
-      } else if (app?.canvas) {
-        void app.canvas.requestFullscreen().catch((err) => {
-          console.warn("Canvas fullscreen error:", err);
-        });
-      }
+    if (typeof document !== "undefined") {
+      fallbackRef.current =
+        document.getElementById("face-view-container") ??
+        (app?.canvas instanceof HTMLElement ? app.canvas : null);
     }
-  }, [app, fullScreen]);
+    void fallbackFullscreen.toggleFullscreen();
+  }, [app, contextFullscreen, fallbackFullscreen]);
 
   const drawIcon = useCallback(
     (graphics: Graphics) => {
       graphics.clear();
-      const pathD = fullScreen
+      const pathD = isFullscreen
         ? iconPaths.arrowsPointingIn
         : iconPaths.arrowsPointingOut;
       graphics.svg(`
@@ -60,7 +43,7 @@ export function FaceFullScreenButton() {
         </svg>
       `);
     },
-    [fullScreen],
+    [isFullscreen],
   );
 
   return (

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  AudioManager,
   TtsAudioCache,
   createPeerbotsFaceStore,
   type FaceMessage,
@@ -65,6 +66,7 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
       play: () => Promise<void>;
       pause: () => void;
     }> = [];
+    const playSpy = vi.fn();
 
     class FakeAudio {
       public src: string;
@@ -76,13 +78,15 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
       public onended: (() => void) | null = null;
       public onerror: (() => void) | null = null;
 
-      public constructor(src: string) {
+      public constructor(src = "") {
         this.src = src;
         audioInstances.push(this);
       }
 
       public async play(): Promise<void> {
+        playSpy(this.src);
         this.paused = false;
+        this.ended = false;
         this.onplay?.();
       }
 
@@ -119,6 +123,7 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
     const store = createPeerbotsFaceStore({
       speechAdapter: adapter,
       ttsCache: cache,
+      audioManager: new AudioManager(),
     });
 
     const voices = await store.getState().refreshVoices();
@@ -139,6 +144,7 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
       { time: 0.12, type: "viseme", value: "a" },
     ]);
     expect(audioInstances).toHaveLength(1);
+    expect(playSpy).toHaveBeenCalledTimes(1);
 
     // Finish first playback
     audioInstances[0].ended = true;
@@ -146,9 +152,11 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
     expect(store.getState().isSpeaking).toBe(false);
 
     // Repeating same phrase hits TtsAudioCache without calling synthesizeSpeech again
+    // and reuses the persistent HTMLAudioElement
     await store.getState().express(msg1);
     expect(synthesizeSpy).toHaveBeenCalledTimes(1);
-    expect(audioInstances).toHaveLength(2);
+    expect(audioInstances).toHaveLength(1);
+    expect(playSpy).toHaveBeenCalledTimes(2);
 
     // Test QUEUE mode: arriving messages wait in FIFO order
     store.getState().setFaceSettings({ speechQueueMode: "queue" });
@@ -170,13 +178,14 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
     expect(store.getState().speechQueue).toHaveLength(2);
     expect(store.getState().lastMessage.title).toBe("Hello");
 
-    // Completing active audio automatically dequeues msg2
-    audioInstances[1].ended = true;
-    audioInstances[1].onended?.();
+    // Completing active audio automatically dequeues msg2 on the persistent element
+    audioInstances[0].ended = true;
+    audioInstances[0].onended?.();
     await vi.waitFor(() => {
       expect(store.getState().lastMessage.title).toBe("Second");
-      expect(audioInstances).toHaveLength(3);
+      expect(playSpy).toHaveBeenCalledTimes(3);
     });
+    expect(audioInstances).toHaveLength(1);
 
     // Interrupt via stopSpeech clears remaining queue
     store.getState().stopSpeech();

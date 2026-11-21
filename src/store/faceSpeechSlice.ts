@@ -15,6 +15,10 @@ import { findMatchingVoice, getLanguageName } from "../helpers/voice_helpers";
 import { estimateVisemesFromText } from "../helpers/viseme_mapper";
 import { AudioAnalyzer, audioAnalyzer as defaultAudioAnalyzer } from "../services/AudioAnalyzer";
 import {
+  AudioManager,
+  audioManager as defaultAudioManager,
+} from "../services/AudioManager";
+import {
   buildTtsCacheKey,
   defaultTtsAudioCache,
   type TtsAudioCache,
@@ -26,6 +30,7 @@ export interface FaceSpeechSliceOptions {
   speechAdapter?: SpeechSynthesizerAdapter | null;
   ttsCache?: TtsAudioCache | false;
   audioAnalyzer?: AudioAnalyzer;
+  audioManager?: AudioManager;
   utteranceDeferMs?: number;
 }
 
@@ -47,6 +52,8 @@ export interface FaceSpeechSlice {
   speechStartTime: number | null;
   speechQueue: QueuedSpeechItem[];
   setSpeechAllowed: (allowed: boolean) => void;
+  /** Unlocks mobile audio playback (persistent HTMLAudioElement, AudioContext, and safe speechSynthesis priming), marks speechAllowed true, and refreshes voices. */
+  unlockAudio: () => Promise<boolean>;
   setAvailableVoices: (voices: FaceVoice[]) => void;
   refreshVoices: () => Promise<FaceVoice[]>;
   getSelectedVoice: () => FaceVoice;
@@ -79,6 +86,13 @@ const FALLBACK_DEFAULT_VOICE: FaceVoice = {
   name: "en-US-Standard-B",
   voiceURI: "en-US-Standard-B",
 };
+
+function isNotAllowedError(err: unknown): boolean {
+  if (!err || typeof err !== "object") {
+    return false;
+  }
+  return (err as { name?: unknown }).name === "NotAllowedError";
+}
 
 function isNativeSpeechSynthesisVoice(voice: unknown): voice is SpeechSynthesisVoice {
   if (!voice || typeof voice !== "object") {
@@ -127,6 +141,7 @@ export function createFaceSpeechSlice(
       ? null
       : (sliceOptions.ttsCache ?? defaultTtsAudioCache);
   const analyzer = sliceOptions.audioAnalyzer ?? defaultAudioAnalyzer;
+  const speechAudioManager = sliceOptions.audioManager ?? defaultAudioManager;
   const utteranceDeferMs = sliceOptions.utteranceDeferMs ?? 10;
 
   let activeAudio: HTMLAudioElement | null = null;
@@ -323,12 +338,24 @@ export function createFaceSpeechSlice(
             }
           }
 
-          if (playbackUrl && typeof Audio !== "undefined") {
+          const audio = playbackUrl
+            ? speechAudioManager.getAudioElement()
+            : null;
+          if (playbackUrl && audio) {
             get().setSpokenVisemes(visemes);
             get().setAmplitudeData(ampData, extrema);
 
-            const audio = new Audio(playbackUrl);
-            audio.crossOrigin = "anonymous";
+            audio.onplay = null;
+            audio.onended = null;
+            audio.onerror = null;
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+            } catch (resetErr) {
+              void resetErr;
+            }
+
+            audio.src = playbackUrl;
             activeAudio = audio;
             if (shouldRevokeUrl) {
               activeObjectUrl = playbackUrl;
@@ -370,7 +397,19 @@ export function createFaceSpeechSlice(
               finishGeneration(myGeneration);
             };
 
-            await audio.play();
+            try {
+              await audio.play();
+            } catch (playError) {
+              if (isNotAllowedError(playError)) {
+                console.warn(
+                  "Audio playback blocked by browser autoplay policy (NotAllowedError); prompting user to re-enable sound.",
+                );
+                get().setSpeechAllowed(false);
+                finishGeneration(myGeneration);
+                return;
+              }
+              throw playError;
+            }
             return;
           }
         } catch (adapterError) {
@@ -497,6 +536,17 @@ export function createFaceSpeechSlice(
 
       setSpeechAllowed: (allowed) => {
         set({ speechAllowed: allowed } as Partial<FaceRenderingSlice & FaceSpeechSlice>);
+      },
+
+      unlockAudio: async () => {
+        const unlockPromise = speechAudioManager.unlock({
+          audioContext: analyzer.getContext(),
+        });
+        set({ speechAllowed: true } as Partial<FaceRenderingSlice & FaceSpeechSlice>);
+        void get().refreshVoices();
+        const unlocked = await unlockPromise;
+        await analyzer.resumeContext();
+        return unlocked;
       },
 
       setAvailableVoices: (voices) => {

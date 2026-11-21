@@ -35,7 +35,6 @@ export function CharacterSelectionControls({
   const faceSettings = useFaceStore((state) => state.faceSettings);
   const availableFaces = useFaceStore((state) => state.availableFaces);
   const availableVoices = useFaceStore((state) => state.availableVoices);
-  const refreshVoices = useFaceStore((state) => state.refreshVoices);
   const selectedFace = useFaceStore((state) => state.selectedFace);
   const getSelectedVoice = useFaceStore((state) => state.getSelectedVoice);
   const selectedVoiceUri = useFaceStore((state) => state.selectedVoiceUri);
@@ -44,7 +43,7 @@ export function CharacterSelectionControls({
   const setFace = useFaceStore((state) => state.setFace);
   const setFaceSettings = useFaceStore((state) => state.setFaceSettings);
   const speechAllowed = useFaceStore((state) => state.speechAllowed);
-  const setSpeechAllowed = useFaceStore((state) => state.setSpeechAllowed);
+  const unlockAudio = useFaceStore((state) => state.unlockAudio);
 
   const currentVoiceUri =
     selectedVoiceUri || getSelectedVoice()?.voiceURI || "";
@@ -66,20 +65,7 @@ export function CharacterSelectionControls({
                 color="darkblue"
                 size="sm"
                 onClick={() => {
-                  try {
-                    if (
-                      typeof window !== "undefined" &&
-                      "speechSynthesis" in window &&
-                      typeof SpeechSynthesisUtterance !== "undefined"
-                    ) {
-                      const utterance = new SpeechSynthesisUtterance(" ");
-                      window.speechSynthesis.speak(utterance);
-                    }
-                  } catch (err) {
-                    console.warn("SpeechSynthesis prime warning:", err);
-                  }
-                  setSpeechAllowed(true);
-                  void refreshVoices();
+                  void unlockAudio();
                 }}
               >
                 {uiLabels.allowSpeech}
