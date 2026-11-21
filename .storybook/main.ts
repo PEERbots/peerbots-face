@@ -23,6 +23,9 @@ const config: StorybookConfig = {
     options: {},
   },
   async viteFinal(viteConfig) {
+    // Storybook's staticDirs already serves/copies ../public; disable Vite's
+    // duplicate publicDir copy to prevent parallel EEXIST mkdir races on CI.
+    viteConfig.publicDir = false;
     if (!viteConfig.plugins) {
       viteConfig.plugins = [];
     }
