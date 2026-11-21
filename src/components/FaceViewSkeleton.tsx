@@ -12,14 +12,14 @@ export function FaceViewSkeleton({
       role="status"
       aria-label={label}
       data-testid="face-view-skeleton"
-      className="flex flex-col items-center justify-center w-full h-full bg-sky-50 p-8 relative"
+      className="pbf:flex pbf:flex-col pbf:items-center pbf:justify-center pbf:w-full pbf:h-full pbf:bg-sky-50 pbf:p-8 pbf:relative"
     >
-      <div className="flex w-[80%] max-w-lg min-w-[260px] justify-around absolute top-1/3 px-12">
-        <Skeleton className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-slate-300" />
-        <Skeleton className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-slate-300" />
+      <div className="pbf:flex pbf:w-[80%] pbf:max-w-lg pbf:min-w-[260px] pbf:justify-around pbf:absolute pbf:top-1/3 pbf:px-12">
+        <Skeleton className="pbf:w-16 pbf:h-16 pbf:md:w-24 pbf:md:h-24 pbf:rounded-full pbf:bg-slate-300" />
+        <Skeleton className="pbf:w-16 pbf:h-16 pbf:md:w-24 pbf:md:h-24 pbf:rounded-full pbf:bg-slate-300" />
       </div>
-      <div className="mt-48">
-        <Skeleton className="w-24 h-6 md:w-32 md:h-12 rounded-full bg-slate-300" />
+      <div className="pbf:mt-48">
+        <Skeleton className="pbf:w-24 pbf:h-6 pbf:md:w-32 pbf:md:h-12 pbf:rounded-full pbf:bg-slate-300" />
       </div>
     </div>
   );

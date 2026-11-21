@@ -3,15 +3,21 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "vitest-axe";
 import { PeerbotsI18nProvider } from "@peerbots/core";
 import {
+  AmplitudeGraph,
   FaceAudioPrompt,
   FaceRendererRegistry,
   FaceSettingsPanel,
   FaceStoreProvider,
+  FaceTesterSection,
   FaceView,
   FaceViewSkeleton,
   availableFaces,
   builtInFaces,
   createPeerbotsFaceStore,
+  getGlobalFaceStore,
+  globalFaceStore,
+  setGlobalFaceStore,
+  useFaceStore,
 } from "../../src";
 
 describe("FaceView, FaceAudioPrompt, FaceSettingsPanel & WCAG 2.1 AA Accessibility", () => {
@@ -203,4 +209,81 @@ describe("FaceView, FaceAudioPrompt, FaceSettingsPanel & WCAG 2.1 AA Accessibili
     const vizijAxe = await axe(container);
     expect(vizijAxe).toHaveNoViolations();
   });
+
+  it("renders FaceTesterSection, dispatches emotion/color/speech updates, and supports setGlobalFaceStore", async () => {
+    const customStore = createPeerbotsFaceStore({ isSilent: true });
+    setGlobalFaceStore(customStore);
+    expect(getGlobalFaceStore()).toBe(customStore);
+
+    try {
+      const { container } = render(
+        <PeerbotsI18nProvider>
+          <FaceTesterSection defaultOpen />
+        </PeerbotsI18nProvider>,
+      );
+
+      const testerAxe = await axe(container);
+      expect(testerAxe).toHaveNoViolations();
+
+      fireEvent.click(
+        screen.getByRole("radio", { name: /Select emotion Happy/i }),
+      );
+      expect(useFaceStore.getState().lastMessage.emotion).toBe("Happy");
+
+      fireEvent.click(screen.getByRole("radio", { name: /Select color Red/i }));
+      expect(useFaceStore.getState().lastMessage.color).toBe("Red");
+
+      const input = screen.getByRole("textbox", { name: /Text to speak/i });
+      fireEvent.change(input, { target: { value: "Hello from tester" } });
+      fireEvent.click(screen.getByRole("button", { name: /Speak/i }));
+      expect(useFaceStore.getState().lastMessage.speech).toBe(
+        "Hello from tester",
+      );
+
+      fireEvent.change(input, { target: { value: "Enter key speech" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(useFaceStore.getState().lastMessage.speech).toBe(
+        "Enter key speech",
+      );
+    } finally {
+      setGlobalFaceStore(globalFaceStore);
+    }
+  });
+
+  it("renders AmplitudeGraph in idle, speaking, and pre-calculated envelope states with zero axe violations", async () => {
+    const store = createPeerbotsFaceStore({ isSilent: true });
+
+    const { container, rerender } = render(
+      <FaceStoreProvider store={store}>
+        <AmplitudeGraph />
+      </FaceStoreProvider>,
+    );
+    expect(
+      screen.getByText(/No amplitude data available/i),
+    ).toBeInTheDocument();
+
+    store.setState({
+      isSpeaking: true,
+      currentAmplitude: 0.42,
+      amplitudeData: [
+        { time: 0, value: 0.1 },
+        { time: 200, value: 0.8 },
+      ],
+      amplitudeExtrema: [{ time: 200, value: 0.8 }],
+    });
+    rerender(
+      <FaceStoreProvider store={store}>
+        <AmplitudeGraph />
+      </FaceStoreProvider>,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /Audio Amplitude Visualization/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Pre-calculated")).toBeInTheDocument();
+
+    const graphAxe = await axe(container);
+    expect(graphAxe).toHaveNoViolations();
+  });
 });
+

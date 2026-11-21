@@ -1,5 +1,6 @@
 import type { Preview } from "@storybook/react-vite";
 import "./preview.css";
+import "../src/styles/index.css";
 import { PeerbotsI18nProvider } from "@peerbots/core";
 
 const preview: Preview = {

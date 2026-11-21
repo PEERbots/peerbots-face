@@ -1,3 +1,5 @@
+import "./styles/index.css";
+
 export * from "./types";
 export * from "./helpers";
 export * from "./services";

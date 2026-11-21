@@ -27,14 +27,14 @@ export function PixiFaceView({
   return (
     <div
       ref={setContainerEl}
-      className="w-full h-full relative overflow-hidden"
+      className="pbf:w-full pbf:h-full pbf:relative pbf:overflow-hidden"
       data-testid="pixi-face-view"
     >
       {containerEl ? (
         <Application
           resizeTo={containerEl}
           backgroundColor="#ABE3FA"
-          className="w-full h-full block"
+          className="pbf:w-full pbf:h-full pbf:block"
         >
           <FaceStoreContext.Provider value={currentStore}>
             {!isPreview && settings.showFullScreenButton && (
@@ -51,4 +51,12 @@ export function PixiFaceView({
   );
 }
 
+export { FaceContainer } from "./FaceContainer";
+export { FaceEyes } from "./FaceEyes";
+export { FaceMouth } from "./FaceMouth";
+export { FaceText } from "./FaceText";
+export { FaceBackground } from "./FaceBackground";
+export { FaceFullScreenButton } from "./FaceFullScreenButton";
+export { FaceScrollToTopButton } from "./FaceScrollToTopButton";
 export default PixiFaceView;
+

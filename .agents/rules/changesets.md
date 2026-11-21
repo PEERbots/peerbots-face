@@ -1,0 +1,2 @@
+- **Always Include a Changeset**: Every pull request or contribution to `@peerbots/face` MUST include a changeset file in `.changeset/*.md` describing the change and bump level (`patch`, `minor`, or `major`). For internal-only changes that do not need a release, run `npx changeset add --empty`.
+- **Verify Changeset Status**: Always verify `npx changeset status` passes before pushing or opening a PR.

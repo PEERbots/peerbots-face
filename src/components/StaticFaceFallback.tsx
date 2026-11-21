@@ -1,4 +1,4 @@
-import { cn } from "@peerbots/core";
+import { faceCn as cn } from "../helpers/cn";
 import { useFaceStore } from "../store/FaceStoreContext";
 import {
   color_mapping,
@@ -69,8 +69,7 @@ export function StaticFaceFallback({
       data-emotion={lastMessage.emotion}
       data-color={lastMessage.color}
       data-speaking={String(isSpeaking)}
-      className={cn(
-        "flex flex-col items-center justify-center w-full h-full p-6 select-none transition-colors duration-200",
+      className={cn("pbf:flex pbf:flex-col pbf:items-center pbf:justify-center pbf:w-full pbf:h-full pbf:p-6 pbf:select-none pbf:transition-colors pbf:duration-200",
         className,
       )}
       style={{
@@ -79,54 +78,54 @@ export function StaticFaceFallback({
       }}
     >
       {isTextDisplay ? (
-        <div className="flex flex-col items-center gap-3 font-mono text-center max-w-xl">
+        <div className="pbf:flex pbf:flex-col pbf:items-center pbf:gap-3 pbf:font-mono pbf:text-center pbf:max-w-xl">
           {textEmotionMode !== "none" && (
-            <span className="text-4xl font-bold" aria-hidden="true">
+            <span className="pbf:text-4xl pbf:font-bold" aria-hidden="true">
               {textEmotionMode === "emoji"
                 ? EMOTION_EMOJIS[lastMessage.emotion]
                 : EMOTION_EMOTICONS[lastMessage.emotion]}
             </span>
           )}
           {lastMessage.speech && (
-            <span className="text-2xl font-semibold break-words">
+            <span className="pbf:text-2xl pbf:font-semibold pbf:break-words">
               {lastMessage.speech}
             </span>
           )}
         </div>
       ) : showSprites && isHugoStyleAvatar ? (
         <div
-          className="flex flex-col items-center justify-center gap-8"
+          className="pbf:flex pbf:flex-col pbf:items-center pbf:justify-center pbf:gap-8"
           aria-hidden="true"
         >
           {pixiSettings?.eyeDisplay !== "none" && (
-            <div className="flex items-center justify-center gap-16 md:gap-24">
-              <div className="flex flex-col items-center">
+            <div className="pbf:flex pbf:items-center pbf:justify-center pbf:gap-16 pbf:md:gap-24">
+              <div className="pbf:flex pbf:flex-col pbf:items-center">
                 <img
                   src={eyePaths.left}
                   alt=""
-                  className="w-20 h-20 md:w-28 md:h-28 object-contain"
+                  className="pbf:w-20 pbf:h-20 pbf:md:w-28 pbf:md:h-28 pbf:object-contain"
                 />
                 {selectedFace.cheeks &&
                   pixiSettings?.cheekDisplay !== "none" && (
                     <img
                       src={selectedFace.cheeks.path}
                       alt=""
-                      className="w-8 h-4 object-contain mt-1"
+                      className="pbf:w-8 pbf:h-4 pbf:object-contain pbf:mt-1"
                     />
                   )}
               </div>
-              <div className="flex flex-col items-center">
+              <div className="pbf:flex pbf:flex-col pbf:items-center">
                 <img
                   src={eyePaths.right}
                   alt=""
-                  className="w-20 h-20 md:w-28 md:h-28 object-contain"
+                  className="pbf:w-20 pbf:h-20 pbf:md:w-28 pbf:md:h-28 pbf:object-contain"
                 />
                 {selectedFace.cheeks &&
                   pixiSettings?.cheekDisplay !== "none" && (
                     <img
                       src={selectedFace.cheeks.path}
                       alt=""
-                      className="w-8 h-4 object-contain mt-1"
+                      className="pbf:w-8 pbf:h-4 pbf:object-contain pbf:mt-1"
                     />
                   )}
               </div>
@@ -134,26 +133,25 @@ export function StaticFaceFallback({
           )}
           {pixiSettings?.mouthDisplay !== "none" && (
             <div
-              className={cn(
-                "rounded-b-full bg-black transition-all duration-150",
-                isSpeaking ? "w-16 h-8" : "w-14 h-3",
+              className={cn("pbf:rounded-b-full pbf:bg-black pbf:transition-all pbf:duration-150",
+                isSpeaking ? "pbf:w-16 pbf:h-8" : "pbf:w-14 pbf:h-3",
               )}
             />
           )}
         </div>
       ) : (
         <div
-          className="flex flex-col items-center justify-center gap-3"
+          className="pbf:flex pbf:flex-col pbf:items-center pbf:justify-center pbf:gap-3"
           aria-hidden="true"
         >
           {showSprites && (
             <img
               src={emotionIconPath}
               alt=""
-              className="w-20 h-20 object-contain"
+              className="pbf:w-20 pbf:h-20 pbf:object-contain"
             />
           )}
-          <span className="text-sm font-semibold tracking-wide">
+          <span className="pbf:text-sm pbf:font-semibold pbf:tracking-wide">
             {selectedFace.name} • {lastMessage.emotion}
           </span>
         </div>

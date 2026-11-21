@@ -12,3 +12,8 @@ export * from "./CharacterSelectionControls";
 export * from "./FacePositioningControls";
 export * from "./FaceBehaviorControls";
 export * from "./FaceSettingsPanel";
+export * from "./FaceTester";
+export * from "./FaceTesterSection";
+export * from "./AmplitudeGraph";
+
+

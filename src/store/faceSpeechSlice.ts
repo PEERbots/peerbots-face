@@ -63,6 +63,12 @@ export interface FaceSpeechSlice {
   express: (message: FaceMessage, options?: ExpressOptions) => Promise<void>;
   /** Alias preserved for backward compatibility with app.peerbots.org */
   _express: (message: FaceMessage, options?: ExpressOptions) => Promise<void>;
+  /** Convenience method that updates lastMessage and triggers express(message) */
+  updateLastMessage: (
+    message: FaceMessage,
+    sender?: string,
+    channelId?: string,
+  ) => Promise<void>;
   stopSpeech: () => void;
 }
 
@@ -615,6 +621,9 @@ export function createFaceSpeechSlice(
 
       express: expressImpl,
       _express: expressImpl,
+      updateLastMessage: async (message) => {
+        await get().express(message);
+      },
 
       stopSpeech: () => {
         cleanupActivePlayback();

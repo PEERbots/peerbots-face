@@ -1,0 +1,2 @@
+@import "tailwindcss" prefix(pbf);
+@source "../**/*.{ts,tsx}";

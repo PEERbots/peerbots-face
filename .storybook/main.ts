@@ -23,6 +23,9 @@ const config: StorybookConfig = {
     options: {},
   },
   async viteFinal(viteConfig) {
+    // Storybook's staticDirs already serves/copies ../public; disable Vite's
+    // duplicate publicDir copy to prevent parallel EEXIST mkdir races on CI.
+    viteConfig.publicDir = false;
     if (!viteConfig.plugins) {
       viteConfig.plugins = [];
     }
@@ -42,6 +45,18 @@ const config: StorybookConfig = {
       "react-dom": path.resolve(dirname, "../node_modules/react-dom"),
       "react-reconciler/constants": "react-reconciler/constants.js",
     };
+    viteConfig.build = viteConfig.build ?? {};
+    viteConfig.build.rollupOptions = viteConfig.build.rollupOptions ?? {};
+    const existingExternal = viteConfig.build.rollupOptions.external;
+    const flowExternals = [
+      "@peerbots/core/flow",
+      "@xyflow/react",
+      "@xyflow/react/dist/style.css",
+      "@dagrejs/dagre",
+    ];
+    viteConfig.build.rollupOptions.external = Array.isArray(existingExternal)
+      ? [...existingExternal, ...flowExternals]
+      : flowExternals;
     return viteConfig;
   },
 };
