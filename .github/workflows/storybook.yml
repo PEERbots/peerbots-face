@@ -52,3 +52,14 @@ jobs:
         uses: chromaui/action@latest
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+
+      - name: Comment on PR
+        if: steps.check_chromatic.outputs.configured == 'true' && github.event_name == 'pull_request' && (steps.chromatic.outputs.storybookUrl != '' || steps.chromatic.outputs.buildUrl != '')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STORYBOOK_URL: ${{ steps.chromatic.outputs.storybookUrl }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "🚀 **Storybook Preview Ready!**
+
+          You can view the live components for this PR here:
+          $STORYBOOK_URL"
