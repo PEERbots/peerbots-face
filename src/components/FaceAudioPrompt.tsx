@@ -19,27 +19,12 @@ export function FaceAudioPrompt({
 }: FaceAudioPromptProps) {
   const uiLabels = resolveFaceUiLabels(labels);
   const speechAllowed = useFaceStore((state) => state.speechAllowed);
-  const setSpeechAllowed = useFaceStore((state) => state.setSpeechAllowed);
-  const refreshVoices = useFaceStore((state) => state.refreshVoices);
+  const unlockAudio = useFaceStore((state) => state.unlockAudio);
 
   const handleEnableAudio = useCallback(() => {
-    try {
-      if (
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window &&
-        typeof SpeechSynthesisUtterance !== "undefined"
-      ) {
-        const utterance = new SpeechSynthesisUtterance(" ");
-        window.speechSynthesis.speak(utterance);
-      }
-    } catch (err) {
-      console.warn("Could not prime speechSynthesis:", err);
-    }
-
-    setSpeechAllowed(true);
-    void refreshVoices();
+    void unlockAudio();
     onEnable?.();
-  }, [setSpeechAllowed, refreshVoices, onEnable]);
+  }, [unlockAudio, onEnable]);
 
   if (speechAllowed) {
     return null;

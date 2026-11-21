@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef } from "react";
 import { faceCn as cn } from "../helpers/cn";
 import { useFaceStore } from "../store/FaceStoreContext";
 import { getFaceCapabilities, type PixiFace, type VizijFace } from "../types/face";
@@ -8,6 +8,7 @@ import {
 } from "../types/renderer";
 import { resolveFaceUiLabels, type FaceUiLabels } from "../types/labels";
 import { isHeadlessOrTestEnvironment } from "../helpers/environment";
+import { FaceFullscreenContext, useFullscreen } from "../hooks/useFullscreen";
 import { FaceCaption } from "./FaceCaption";
 import { FaceViewSkeleton } from "./FaceViewSkeleton";
 import { StaticFaceFallback } from "./StaticFaceFallback";
@@ -65,6 +66,8 @@ export interface FaceViewProps {
   registry?: FaceRendererRegistry;
   labels?: Partial<FaceUiLabels>;
   className?: string;
+  /** Called whenever fullscreen state changes (native or CSS pseudo-fullscreen). */
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
 export function FaceView({
@@ -75,7 +78,10 @@ export function FaceView({
   registry = defaultFaceRendererRegistry,
   labels,
   className,
+  onFullscreenChange,
 }: FaceViewProps = {}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fullscreenState = useFullscreen(containerRef, { onFullscreenChange });
   const uiLabels = resolveFaceUiLabels(labels);
   const selectedFace = useFaceStore((state) => state.selectedFace);
   const strategy = selectedFace ? registry.get(selectedFace.kind) : undefined;
@@ -110,14 +116,23 @@ export function FaceView({
   };
 
   return (
-    <div
-      id="face-view-container"
-      className={cn("pbf:relative pbf:w-full pbf:h-full pbf:text-center pbf:overflow-hidden",
-        className,
-      )}
-    >
-      {renderContent()}
-      {!isPreview && <FaceCaption />}
-    </div>
+    <FaceFullscreenContext.Provider value={fullscreenState}>
+      <div
+        ref={containerRef}
+        id="face-view-container"
+        data-pseudo-fullscreen={
+          fullscreenState.isPseudoFullscreen ? "true" : undefined
+        }
+        className={cn(
+          "pbf:relative pbf:w-full pbf:h-full pbf:text-center pbf:overflow-hidden",
+          fullscreenState.isPseudoFullscreen &&
+            "pbf:fixed pbf:inset-0 pbf:z-[9999] pbf:w-screen pbf:h-[100dvh]",
+          className,
+        )}
+      >
+        {renderContent()}
+        {!isPreview && <FaceCaption />}
+      </div>
+    </FaceFullscreenContext.Provider>
   );
 }
