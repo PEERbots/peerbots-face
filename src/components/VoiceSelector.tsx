@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Select, Field, cn } from "@peerbots/core";
+import { Select, Field } from "@peerbots/core";
+import { faceCn as cn } from "../helpers/cn";
 import type { FaceVoice } from "../types/speech";
 import {
   formatVoiceDisplayName,
@@ -86,11 +87,11 @@ export function VoiceSelector({
   }, [selectedVoiceUri, filteredVoices]);
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      <Field label={uiLabels.voiceSelectorLanguage} className="flex-col gap-1">
+    <div className={cn("pbf:flex pbf:flex-col pbf:gap-3", className)}>
+      <Field label={uiLabels.voiceSelectorLanguage} className="pbf:flex-col pbf:gap-1">
         <Select
           aria-label={uiLabels.voiceSelectorLanguage}
-          className="w-full"
+          className="pbf:w-full"
           value={selectedLanguage || languages[0]?.value || "English"}
           onChange={(val) => {
             if (val && onLanguageChange) {
@@ -100,10 +101,10 @@ export function VoiceSelector({
           options={languages}
         />
       </Field>
-      <Field label={uiLabels.voiceSelectorVoice} className="flex-col gap-1">
+      <Field label={uiLabels.voiceSelectorVoice} className="pbf:flex-col pbf:gap-1">
         <Select
           aria-label={uiLabels.voiceSelectorVoice}
-          className="w-full"
+          className="pbf:w-full"
           value={activeVoiceValue}
           onChange={(val) => {
             if (val) {

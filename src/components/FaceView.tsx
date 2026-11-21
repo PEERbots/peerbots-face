@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { cn } from "@peerbots/core";
+import { faceCn as cn } from "../helpers/cn";
 import { useFaceStore } from "../store/FaceStoreContext";
 import { getFaceCapabilities, type PixiFace, type VizijFace } from "../types/face";
 import {
@@ -85,7 +85,7 @@ export function FaceView({
       return (
         <div
           role="alert"
-          className="flex items-center justify-center w-full h-full bg-slate-100 text-slate-800 text-sm p-4"
+          className="pbf:flex pbf:items-center pbf:justify-center pbf:w-full pbf:h-full pbf:bg-slate-100 pbf:text-slate-800 pbf:text-sm pbf:p-4"
         >
           {uiLabels.unknownFaceType}
         </div>
@@ -112,8 +112,7 @@ export function FaceView({
   return (
     <div
       id="face-view-container"
-      className={cn(
-        "relative w-full h-full text-center overflow-hidden",
+      className={cn("pbf:relative pbf:w-full pbf:h-full pbf:text-center pbf:overflow-hidden",
         className,
       )}
     >

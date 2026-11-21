@@ -52,9 +52,9 @@ export function FaceTester({ labels, onSendMessage }: FaceTesterProps = {}) {
 
   return (
     <div>
-      <div className="flex my-2">
+      <div className="pbf:flex pbf:my-2">
         <div>
-          <div className="text-xs">{uiLabels.sendEmotion}</div>
+          <div className="pbf:text-xs">{uiLabels.sendEmotion}</div>
           <EmotionSelector
             selectedEmotion=""
             onEmotionSelect={(emotion) => {
@@ -62,9 +62,9 @@ export function FaceTester({ labels, onSendMessage }: FaceTesterProps = {}) {
             }}
           />
         </div>
-        <div className="flex-1" />
+        <div className="pbf:flex-1" />
         <div>
-          <div className="text-xs">{uiLabels.sendColor}</div>
+          <div className="pbf:text-xs">{uiLabels.sendColor}</div>
           <PeerbotsColorSelector
             selectedColor=""
             onColorSelect={(color) => {
@@ -73,7 +73,7 @@ export function FaceTester({ labels, onSendMessage }: FaceTesterProps = {}) {
           />
         </div>
       </div>
-      <div className="flex mt-2 pt-2 gap-2">
+      <div className="pbf:flex pbf:mt-2 pbf:pt-2 pbf:gap-2">
         <Input
           ref={textToSpeak}
           placeholder={uiLabels.textToSpeakPlaceholder}

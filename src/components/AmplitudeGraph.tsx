@@ -9,7 +9,7 @@ export function AmplitudeGraph() {
 
   if (!isSpeaking && (!amplitudeData || amplitudeData.length === 0)) {
     return (
-      <div className="p-4 text-gray-500 italic">
+      <div className="pbf:p-4 pbf:text-gray-500 pbf:italic">
         No amplitude data available. Speak something to see data.
       </div>
     );
@@ -24,26 +24,26 @@ export function AmplitudeGraph() {
   const padding = 20;
 
   return (
-    <div className="m-4 p-4 bg-white shadow-xl rounded-lg border border-gray-100">
-      <div className="flex items-center justify-between mb-2">
+    <div className="pbf:m-4 pbf:p-4 pbf:bg-white pbf:shadow-xl pbf:rounded-lg pbf:border pbf:border-gray-100">
+      <div className="pbf:flex pbf:items-center pbf:justify-between pbf:mb-2">
         <Heading level={3}>Audio Amplitude Visualization</Heading>
-        <div className="flex gap-4 items-center">
-          <div className="text-sm font-medium">
+        <div className="pbf:flex pbf:gap-4 pbf:items-center">
+          <div className="pbf:text-sm pbf:font-medium">
             Live:{" "}
-            <span className="text-blue-600">
+            <span className="pbf:text-blue-600">
               {(currentAmplitude * 100).toFixed(1)}%
             </span>
           </div>
-          <div className="flex-1 h-4 w-24 bg-gray-200 rounded-full overflow-hidden">
+          <div className="pbf:flex-1 pbf:h-4 pbf:w-24 pbf:bg-gray-200 pbf:rounded-full pbf:overflow-hidden">
             <div
-              className="h-full bg-blue-500 transition-all duration-75"
+              className="pbf:h-full pbf:bg-blue-500 pbf:transition-all pbf:duration-75"
               style={{ width: `${currentAmplitude * 100}%` }}
             />
           </div>
           {isSpeaking && (
-            <span className="flex h-3 w-3 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+            <span className="pbf:flex pbf:h-3 pbf:w-3 pbf:relative">
+              <span className="pbf:animate-ping pbf:absolute pbf:inline-flex pbf:h-full pbf:w-full pbf:rounded-full pbf:bg-green-400 pbf:opacity-75" />
+              <span className="pbf:relative pbf:inline-flex pbf:rounded-full pbf:h-3 pbf:w-3 pbf:bg-green-500" />
             </span>
           )}
         </div>
@@ -67,40 +67,40 @@ export function AmplitudeGraph() {
         padding={padding}
       />
 
-      <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+      <div className="pbf:mt-4 pbf:grid pbf:grid-cols-2 pbf:gap-4 pbf:text-xs">
         <div>
-          <span className="font-bold block mb-1">
+          <span className="pbf:font-bold pbf:block pbf:mb-1">
             Local Extrema ({amplitudeExtrema?.length || 0})
           </span>
-          <div className="max-h-32 overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200">
+          <div className="pbf:max-h-32 pbf:overflow-y-auto pbf:bg-gray-50 pbf:p-2 pbf:rounded pbf:border pbf:border-gray-200">
             {amplitudeExtrema?.map((p, i) => (
               <div
                 key={i}
-                className="flex justify-between py-0.5 border-b border-gray-100 last:border-0"
+                className="pbf:flex pbf:justify-between pbf:py-0.5 pbf:border-b pbf:border-gray-100 pbf:last:border-0"
               >
                 <span>{p.time}ms</span>
-                <span className="font-mono">{p.value.toFixed(4)}</span>
+                <span className="pbf:font-mono">{p.value.toFixed(4)}</span>
               </div>
             ))}
             {!amplitudeExtrema?.length && (
-              <div className="text-slate-700 italic">No extrema found</div>
+              <div className="pbf:text-slate-700 pbf:italic">No extrema found</div>
             )}
           </div>
         </div>
         <div>
-          <span className="font-bold block mb-1">Stats</span>
-          <div className="bg-gray-50 p-2 rounded border border-gray-200">
-            <div className="flex justify-between">
+          <span className="pbf:font-bold pbf:block pbf:mb-1">Stats</span>
+          <div className="pbf:bg-gray-50 pbf:p-2 pbf:rounded pbf:border pbf:border-gray-200">
+            <div className="pbf:flex pbf:justify-between">
               <span>Duration:</span>
-              <span className="font-mono">{maxTime}ms</span>
+              <span className="pbf:font-mono">{maxTime}ms</span>
             </div>
-            <div className="flex justify-between">
+            <div className="pbf:flex pbf:justify-between">
               <span>Data Points:</span>
-              <span className="font-mono">{amplitudeData?.length || 0}</span>
+              <span className="pbf:font-mono">{amplitudeData?.length || 0}</span>
             </div>
-            <div className="flex justify-between mt-1 pt-1 border-t border-gray-200">
+            <div className="pbf:flex pbf:justify-between pbf:mt-1 pbf:pt-1 pbf:border-t pbf:border-gray-200">
               <span>Method:</span>
-              <span className="text-blue-600 font-medium">
+              <span className="pbf:text-blue-600 pbf:font-medium">
                 {hasData
                   ? "Pre-calculated"
                   : currentAmplitude > 0

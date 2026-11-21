@@ -27,14 +27,14 @@ export function PixiFaceView({
   return (
     <div
       ref={setContainerEl}
-      className="w-full h-full relative overflow-hidden"
+      className="pbf:w-full pbf:h-full pbf:relative pbf:overflow-hidden"
       data-testid="pixi-face-view"
     >
       {containerEl ? (
         <Application
           resizeTo={containerEl}
           backgroundColor="#ABE3FA"
-          className="w-full h-full block"
+          className="pbf:w-full pbf:h-full pbf:block"
         >
           <FaceStoreContext.Provider value={currentStore}>
             {!isPreview && settings.showFullScreenButton && (

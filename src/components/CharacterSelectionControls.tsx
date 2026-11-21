@@ -57,10 +57,10 @@ export function CharacterSelectionControls({
 
   return (
     <SettingsPanel title={uiLabels.characterSelection} headingLevel={4}>
-      <div className="space-y-4">
+      <div className="pbf:space-y-4">
         {!speechAllowed && (
           <>
-            <div className="flex">
+            <div className="pbf:flex">
               <Button
                 variant="solid"
                 color="darkblue"
@@ -108,10 +108,10 @@ export function CharacterSelectionControls({
           }}
         />
 
-        <Field label={uiLabels.face} className="flex-col gap-1">
+        <Field label={uiLabels.face} className="pbf:flex-col pbf:gap-1">
           <Select
             aria-label={uiLabels.face}
-            className="w-full"
+            className="pbf:w-full"
             value={selectedFace ? selectedFace.name : "Hugo"}
             onChange={(selectedName) => {
               const found = selectableFaces.find(
@@ -129,12 +129,12 @@ export function CharacterSelectionControls({
         </Field>
 
         {selectedFace?.name === "Custom Face" && (
-          <Field label={uiLabels.uploadGlb} className="flex-col gap-1">
+          <Field label={uiLabels.uploadGlb} className="pbf:flex-col pbf:gap-1">
             <Input
               aria-label={uiLabels.uploadGlb}
               type="file"
               accept=".glb"
-              className="w-full text-sm text-slate-900"
+              className="pbf:w-full pbf:text-sm pbf:text-slate-900"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file && selectedFace?.kind === "Vizij") {
@@ -158,62 +158,62 @@ export function CharacterSelectionControls({
         )}
 
         {selectedFace && (
-          <div className="py-1.5 px-3 border-l-2 rtl:border-l-0 rtl:border-r-2 border-teal-700/30 bg-slate-50 rounded-r-md">
-            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">
+          <div className="pbf:py-1.5 pbf:px-3 pbf:border-l-2 pbf:rtl:border-l-0 pbf:rtl:border-r-2 pbf:border-teal-700/30 pbf:bg-slate-50 pbf:rounded-r-md">
+            <span className="pbf:text-[11px] pbf:font-bold pbf:text-slate-700 pbf:uppercase pbf:tracking-wider pbf:mb-1.5 pbf:block">
               {uiLabels.faceCapabilities}
             </span>
-            <div className="flex flex-row flex-wrap gap-x-4 gap-y-2">
-              <div className="flex items-start gap-1.5 min-w-fit">
+            <div className="pbf:flex pbf:flex-row pbf:flex-wrap pbf:gap-x-4 pbf:gap-y-2">
+              <div className="pbf:flex pbf:items-start pbf:gap-1.5 pbf:min-w-fit">
                 <span
                   aria-hidden="true"
-                  className={`mt-1 w-2 h-2 rounded-full ${
-                    caps.canExpressColor ? "bg-emerald-600" : "bg-slate-400"
+                  className={`pbf:mt-1 pbf:w-2 pbf:h-2 pbf:rounded-full ${
+                    caps.canExpressColor ? "pbf:bg-emerald-600" : "pbf:bg-slate-400"
                   }`}
                 />
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-800">
+                <div className="pbf:flex pbf:flex-col">
+                  <span className="pbf:text-xs pbf:font-semibold pbf:text-slate-800">
                     {uiLabels.color}
                   </span>
                   {typeof caps.canExpressColor === "string" && (
-                    <span className="text-[11px] text-slate-600">
+                    <span className="pbf:text-[11px] pbf:text-slate-600">
                       {caps.canExpressColor}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-start gap-1.5 min-w-fit">
+              <div className="pbf:flex pbf:items-start pbf:gap-1.5 pbf:min-w-fit">
                 <span
                   aria-hidden="true"
-                  className={`mt-1 w-2 h-2 rounded-full ${
-                    caps.canExpressEmotion ? "bg-emerald-600" : "bg-slate-400"
+                  className={`pbf:mt-1 pbf:w-2 pbf:h-2 pbf:rounded-full ${
+                    caps.canExpressEmotion ? "pbf:bg-emerald-600" : "pbf:bg-slate-400"
                   }`}
                 />
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-800">
+                <div className="pbf:flex pbf:flex-col">
+                  <span className="pbf:text-xs pbf:font-semibold pbf:text-slate-800">
                     {uiLabels.emotion}
                   </span>
                   {typeof caps.canExpressEmotion === "string" && (
-                    <span className="text-[11px] text-slate-600">
+                    <span className="pbf:text-[11px] pbf:text-slate-600">
                       {caps.canExpressEmotion}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-start gap-1.5 min-w-fit">
+              <div className="pbf:flex pbf:items-start pbf:gap-1.5 pbf:min-w-fit">
                 <span
                   aria-hidden="true"
-                  className={`mt-1 w-2 h-2 rounded-full ${
-                    caps.canLipSync ? "bg-emerald-600" : "bg-slate-400"
+                  className={`pbf:mt-1 pbf:w-2 pbf:h-2 pbf:rounded-full ${
+                    caps.canLipSync ? "pbf:bg-emerald-600" : "pbf:bg-slate-400"
                   }`}
                 />
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-800">
+                <div className="pbf:flex pbf:flex-col">
+                  <span className="pbf:text-xs pbf:font-semibold pbf:text-slate-800">
                     {uiLabels.speech}
                   </span>
                   {typeof caps.canLipSync === "string" && (
-                    <span className="text-[11px] text-slate-600">
+                    <span className="pbf:text-[11px] pbf:text-slate-600">
                       {caps.canLipSync}
                     </span>
                   )}
@@ -226,9 +226,9 @@ export function CharacterSelectionControls({
         {enableVizij && selectedFace?.kind === "Vizij" && (
           <>
             <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-slate-800">
+            <div className="pbf:space-y-3">
+              <div className="pbf:flex pbf:items-center pbf:justify-between">
+                <span className="pbf:font-bold pbf:text-sm pbf:text-slate-800">
                   {uiLabels.faceSpecificSettings}
                 </span>
                 <PoweredByVizij poweredByLabel={uiLabels.poweredBy} />
@@ -259,16 +259,16 @@ export function CharacterSelectionControls({
         {selectedFace?.kind === "PixiFace" && (
           <>
             <Separator />
-            <div className="space-y-3">
-              <span className="font-bold text-sm text-slate-800 block">
+            <div className="pbf:space-y-3">
+              <span className="pbf:font-bold pbf:text-sm pbf:text-slate-800 pbf:block">
                 {uiLabels.faceSpecificSettings}
               </span>
               {selectedFace.type === "avatar" && (
-                <div className="flex flex-col gap-3">
+                <div className="pbf:flex pbf:flex-col pbf:gap-3">
                   <Field
                     label={uiLabels.eyes}
                     labelPlacement="left"
-                    className="flex-row items-center justify-between"
+                    className="pbf:flex-row pbf:items-center pbf:justify-between"
                   >
                     <TabRadio
                       aria-label={uiLabels.eyes}
@@ -293,7 +293,7 @@ export function CharacterSelectionControls({
                   <Field
                     label={uiLabels.mouth}
                     labelPlacement="left"
-                    className="flex-row items-center justify-between"
+                    className="pbf:flex-row pbf:items-center pbf:justify-between"
                   >
                     <TabRadio
                       aria-label={uiLabels.mouth}
@@ -320,7 +320,7 @@ export function CharacterSelectionControls({
                   <Field
                     label={uiLabels.cheeks}
                     labelPlacement="left"
-                    className="flex-row items-center justify-between"
+                    className="pbf:flex-row pbf:items-center pbf:justify-between"
                   >
                     <TabRadio
                       aria-label={uiLabels.cheeks}
@@ -351,7 +351,7 @@ export function CharacterSelectionControls({
                 <Field
                   label={uiLabels.emotionDisplay}
                   labelPlacement="left"
-                  className="flex-row items-center justify-between"
+                  className="pbf:flex-row pbf:items-center pbf:justify-between"
                 >
                   <TabRadio
                     aria-label={uiLabels.emotionDisplay}

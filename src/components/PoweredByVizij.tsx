@@ -1,4 +1,4 @@
-import { cn } from "@peerbots/core";
+import { faceCn as cn } from "../helpers/cn";
 import { useFaceStore } from "../store/FaceStoreContext";
 import { DEFAULT_FACE_UI_LABELS } from "../types/labels";
 
@@ -18,20 +18,19 @@ export function PoweredByVizij({
       href="https://vizij.ai"
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "inline-flex flex-col items-center gap-0.5 group transition-all hover:opacity-100 opacity-90",
+      className={cn("pbf:inline-flex pbf:flex-col pbf:items-center pbf:gap-0.5 pbf:group pbf:transition-all pbf:hover:opacity-100 pbf:opacity-90",
         className,
       )}
     >
-      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em] leading-tight select-none">
+      <span className="pbf:text-[9px] pbf:font-bold pbf:text-slate-600 pbf:uppercase pbf:tracking-[0.2em] pbf:leading-tight pbf:select-none">
         {poweredByLabel}
       </span>
-      <div className="flex items-center gap-1.5 focus-visible:outline-none">
-        <div className="relative w-5 h-5 group-hover:scale-110 transition-transform duration-300 ease-out">
+      <div className="pbf:flex pbf:items-center pbf:gap-1.5 pbf:focus-visible:outline-none">
+        <div className="pbf:relative pbf:w-5 pbf:h-5 pbf:group-hover:scale-110 pbf:transition-transform pbf:duration-300 pbf:ease-out">
           <img
             src={`${assetBaseUrl}/Vizij/brand.svg`}
             alt="Vizij Logo"
-            className="w-full h-full object-contain"
+            className="pbf:w-full pbf:h-full pbf:object-contain"
           />
         </div>
         <span
@@ -39,7 +38,7 @@ export function PoweredByVizij({
             fontFamily:
               "Gilroy, SFProRounded, ui-sans-serif, system-ui, sans-serif",
           }}
-          className="text-lg font-bold tracking-tight text-teal-700"
+          className="pbf:text-lg pbf:font-bold pbf:tracking-tight pbf:text-teal-700"
         >
           vizij
         </span>

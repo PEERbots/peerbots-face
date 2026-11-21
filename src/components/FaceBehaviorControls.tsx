@@ -24,16 +24,16 @@ export function FaceBehaviorControls({
 
   return (
     <SettingsPanel title={uiLabels.faceSettings} headingLevel={4}>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <span className="font-bold text-sm text-slate-800">
+      <div className="pbf:flex pbf:flex-col pbf:gap-4">
+        <div className="pbf:flex pbf:flex-col pbf:gap-2">
+          <span className="pbf:font-bold pbf:text-sm pbf:text-slate-800">
             {uiLabels.onFaceButtons}
           </span>
           <Field
             label={uiLabels.showFullScreenButton}
             labelPlacement="left"
             labelWeight="normal"
-            className="flex-row items-center justify-between"
+            className="pbf:flex-row pbf:items-center pbf:justify-between"
           >
             <Switch
               aria-label={uiLabels.showFullScreenButton}
@@ -47,7 +47,7 @@ export function FaceBehaviorControls({
             label={uiLabels.showScrollButton}
             labelPlacement="left"
             labelWeight="normal"
-            className="flex-row items-center justify-between"
+            className="pbf:flex-row pbf:items-center pbf:justify-between"
           >
             <Switch
               aria-label={uiLabels.showScrollButton}
@@ -61,14 +61,14 @@ export function FaceBehaviorControls({
 
         <Separator />
 
-        <div className="flex flex-col gap-2">
-          <span className="font-bold text-sm text-slate-800">
+        <div className="pbf:flex pbf:flex-col pbf:gap-2">
+          <span className="pbf:font-bold pbf:text-sm pbf:text-slate-800">
             {uiLabels.speechBehavior}
           </span>
-          <Field label={uiLabels.newButtonSpeech} className="flex-col gap-1">
+          <Field label={uiLabels.newButtonSpeech} className="pbf:flex-col pbf:gap-1">
             <Select
               aria-label={uiLabels.newButtonSpeech}
-              className="w-full"
+              className="pbf:w-full"
               value={faceSettings.speechQueueMode || "interrupt"}
               onChange={(val) => {
                 if (val) {
@@ -93,12 +93,12 @@ export function FaceBehaviorControls({
 
         <Separator />
 
-        <div className="flex flex-col gap-3">
+        <div className="pbf:flex pbf:flex-col pbf:gap-3">
           <Field
             label={uiLabels.captions}
             labelPlacement="left"
             labelWeight="bold"
-            className="flex-row items-center justify-between"
+            className="pbf:flex-row pbf:items-center pbf:justify-between"
           >
             <Switch
               aria-label={uiLabels.captions}
@@ -115,7 +115,7 @@ export function FaceBehaviorControls({
           </Field>
 
           {faceSettings.captions?.enabled && (
-            <div className="flex flex-col gap-4 mt-1">
+            <div className="pbf:flex pbf:flex-col pbf:gap-4 pbf:mt-1">
               <FieldGroup label={uiLabels.fontSize}>
                 <SliderWithNumberField
                   aria-label={uiLabels.fontSize}

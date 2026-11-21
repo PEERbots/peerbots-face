@@ -31,13 +31,13 @@ export function FacePositioningControls({
 
   return (
     <SettingsPanel title={uiLabels.positioning} headingLevel={4}>
-      <div className="space-y-4">
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+      <div className="pbf:space-y-4">
+        <div className="pbf:flex pbf:w-full pbf:flex-wrap pbf:items-center pbf:justify-between pbf:gap-2">
           <Field
             label={uiLabels.autoRotate}
             labelPlacement="left"
             labelWeight="normal"
-            className="flex-row items-center gap-2 mb-0 !w-auto"
+            className="pbf:flex-row pbf:items-center pbf:gap-2 pbf:mb-0 pbf:!w-auto"
           >
             <Switch
               aria-label={uiLabels.autoRotate}
@@ -48,17 +48,17 @@ export function FacePositioningControls({
             />
           </Field>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="pbf:flex pbf:items-center pbf:gap-1.5 pbf:shrink-0">
             <Button
               variant="ghost"
               size="sm"
-              className="p-1.5 text-xs whitespace-nowrap"
+              className="pbf:p-1.5 pbf:text-xs pbf:whitespace-nowrap"
               onClick={() => {
                 setFaceSettings({
                   rotation: (faceSettings.rotation + 90) % 360,
                 });
               }}
-              leftIcon={<Icon name="arrowPath" className="h-3.5 w-3.5" />}
+              leftIcon={<Icon name="arrowPath" className="pbf:h-3.5 pbf:w-3.5" />}
             >
               {uiLabels.rotate}
             </Button>
@@ -67,10 +67,10 @@ export function FacePositioningControls({
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-1.5 text-xs whitespace-nowrap"
+                className="pbf:p-1.5 pbf:text-xs pbf:whitespace-nowrap"
                 onClick={resetPositioning}
                 leftIcon={
-                  <Icon name="arrowUturnLeft" className="h-3.5 w-3.5" />
+                  <Icon name="arrowUturnLeft" className="pbf:h-3.5 pbf:w-3.5" />
                 }
               >
                 {uiLabels.reset}
@@ -81,7 +81,7 @@ export function FacePositioningControls({
 
         <Separator />
 
-        <div className="flex flex-col gap-4">
+        <div className="pbf:flex pbf:flex-col pbf:gap-4">
           <FieldGroup
             label={uiLabels.zoom}
             icon={<Icon name="magnifyingGlassPlus" />}

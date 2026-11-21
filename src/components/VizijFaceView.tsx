@@ -17,7 +17,7 @@ import { resolveFaceUiLabels, type FaceUiLabels } from "../types/labels";
 function VizijFallback({ labels }: { labels: FaceUiLabels }) {
   const { loading, error, ready } = useVizijRuntime();
   return (
-    <div className="flex items-center justify-center w-full h-full text-white bg-slate-900 p-4 text-sm">
+    <div className="pbf:flex pbf:items-center pbf:justify-center pbf:w-full pbf:h-full pbf:text-white pbf:bg-slate-900 pbf:p-4 pbf:text-sm">
       {(loading || !ready) && !error && <div>{labels.loading}</div>}
       {error && (
         <div>
@@ -175,10 +175,10 @@ function VizijPoseSetter() {
 }
 
 const ROTATION_CLASS: Record<0 | 90 | 180 | 270, string> = {
-  0: "rotate-0 w-full h-full",
-  90: "rotate-90 w-full h-full",
-  180: "rotate-180 w-full h-full",
-  270: "rotate-270 w-full h-full",
+  0: "pbf:rotate-0 pbf:w-full pbf:h-full",
+  90: "pbf:rotate-90 pbf:w-full pbf:h-full",
+  180: "pbf:rotate-180 pbf:w-full pbf:h-full",
+  270: "pbf:rotate-270 pbf:w-full pbf:h-full",
 };
 
 export interface VizijFaceViewProps {
@@ -209,12 +209,12 @@ export function VizijFaceView({ labels }: VizijFaceViewProps = {}) {
       {hasGlbUrl ? (
         <VizijRuntimeProvider assetBundle={selectedFace.assetBundle} autostart>
           <Suspense fallback={<VizijFallback labels={uiLabels} />}>
-            <VizijRuntimeFace className="bg-black w-full h-full" />
+            <VizijRuntimeFace className="pbf:bg-black pbf:w-full pbf:h-full" />
             <VizijPoseSetter />
           </Suspense>
         </VizijRuntimeProvider>
       ) : (
-        <div className="flex items-center justify-center h-full text-white bg-slate-900 p-4 text-sm">
+        <div className="pbf:flex pbf:items-center pbf:justify-center pbf:h-full pbf:text-white pbf:bg-slate-900 pbf:p-4 pbf:text-sm">
           {uiLabels.vizijUploadGlb}
         </div>
       )}

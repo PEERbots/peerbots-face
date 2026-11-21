@@ -54,7 +54,7 @@ export function FaceCaption() {
       role="status"
       aria-live="polite"
       data-testid="face-caption"
-      className="absolute text-center w-[80%] pointer-events-none z-50 font-sans"
+      className="pbf:absolute pbf:text-center pbf:w-[80%] pbf:pointer-events-none pbf:z-50 pbf:font-sans"
       style={{
         top: `calc(${offsetY}% + 80%)`,
         left: `calc(50% + ${offsetX}px)`,

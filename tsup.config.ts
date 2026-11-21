@@ -26,6 +26,8 @@ export default defineConfig([
     clean: false,
     sourcemap: true,
     splitting: true,
+    injectStyle: (css) =>
+      `import styleInject from '#style-inject';styleInject(${css}, { insertAt: 'top' })`,
     external: sharedExternal,
   },
   {
@@ -40,6 +42,8 @@ export default defineConfig([
     clean: false,
     sourcemap: true,
     splitting: false,
+    injectStyle: (css) =>
+      `import styleInject from '#style-inject';styleInject(${css}, { insertAt: 'top' })`,
     external: sharedExternal,
   },
 ]);

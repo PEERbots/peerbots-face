@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { Button, Icon, cn } from "@peerbots/core";
+import { Button, Icon } from "@peerbots/core";
+import { faceCn as cn } from "../helpers/cn";
 import { useFaceStore } from "../store/FaceStoreContext";
 import { resolveFaceUiLabels, type FaceUiLabels } from "../types/labels";
 
@@ -46,10 +47,10 @@ export function FaceAudioPrompt({
 
   const positionClasses =
     position === "fixed"
-      ? "fixed top-4 left-1/2 -translate-x-1/2 z-50"
+      ? "pbf:fixed pbf:top-4 pbf:left-1/2 pbf:-translate-x-1/2 pbf:z-50"
       : position === "absolute"
-        ? "absolute top-4 left-1/2 -translate-x-1/2 z-50"
-        : "inline-flex";
+        ? "pbf:absolute pbf:top-4 pbf:left-1/2 pbf:-translate-x-1/2 pbf:z-50"
+        : "pbf:inline-flex";
 
   return (
     <div
@@ -61,11 +62,11 @@ export function FaceAudioPrompt({
         color="darkblue"
         size="sm"
         onClick={handleEnableAudio}
-        className="shadow-lg px-4 py-2 flex items-center gap-2 rounded-full cursor-pointer"
+        className="pbf:shadow-lg pbf:px-4 pbf:py-2 pbf:flex pbf:items-center pbf:gap-2 pbf:rounded-full pbf:cursor-pointer"
         aria-label={uiLabels.tapToEnableSound}
       >
-        <Icon name="play" size="sm" className="w-3.5 h-3.5" />
-        <span className="font-semibold text-xs tracking-wide">
+        <Icon name="play" size="sm" className="pbf:w-3.5 pbf:h-3.5" />
+        <span className="pbf:font-semibold pbf:text-xs pbf:tracking-wide">
           {uiLabels.tapToEnableSound}
         </span>
       </Button>
