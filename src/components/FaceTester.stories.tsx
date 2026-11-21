@@ -16,8 +16,14 @@ export const Default: Story = {};
 export const Variations: Story = {
   render: () => (
     <div className="space-y-6 max-w-2xl">
-      <FaceTesterSection defaultOpen />
-      <FaceTesterSection defaultOpen={false} />
+      <FaceTesterSection
+        defaultOpen
+        labels={{ testFace: "Test Face (Expanded)" }}
+      />
+      <FaceTesterSection
+        defaultOpen={false}
+        labels={{ testFace: "Test Face (Collapsed)" }}
+      />
     </div>
   ),
 };
