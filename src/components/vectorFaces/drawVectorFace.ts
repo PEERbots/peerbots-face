@@ -210,6 +210,136 @@ function drawCurvedBrow(
 }
 
 /**
+ * Unified C-infinity unit-disk warp for classic Hugo eyes AND embedded highlights.
+ * Because both the eye silhouette and the twin white highlights pass through the same
+ * diffeomorphism of the unit disk, highlights smoothly curve, tilt, stretch, and squash
+ * across all 6 canonical emotions (Neutral, Happy, Sad, Surprised, Concerned, Sleepy)
+ * without ever clipping outside the eye boundary.
+ */
+function deformHugoPoint(
+  nx: number,
+  ny: number,
+  pose: FacePose,
+  isLeft: boolean,
+): { x: number; y: number } {
+  const sign = isLeft ? 1 : -1;
+  let x = nx;
+  let y = ny;
+
+  // 1. Happy: rounded bottom crescent arch + subtle upper lift
+  if (pose.happyArc > 0.001) {
+    const tBot = (ny + 1) * 0.5;
+    const x2 = nx * nx;
+    const arch = Math.exp(-3.104 * x2);
+    const xH = nx * (1.15 - 0.0196 * tBot);
+    const yH =
+      ny * 0.78 -
+      0.22 -
+      0.4006 * arch * (0.3 + 0.7 * tBot) +
+      0.4694 * x2 * Math.pow(tBot, 1.4);
+    x += (xH - nx) * pose.happyArc;
+    y += (yH - ny) * pose.happyArc;
+  }
+
+  // 2. Sad: tall inner-top peak, drooping outer slope, soft outer-bottom corner
+  if (pose.sadDroop > 0.001) {
+    const u = nx * sign; // +1 inner (nose), -1 outer
+    const tTop = (1 - ny) * 0.5;
+    const tBot = 1 - tTop;
+    const outer = Math.max(0, (1 - u) * 0.5);
+    const inner = Math.max(0, (1 + u) * 0.5);
+    const uS =
+      u * 1.0287 +
+      0.027 * tTop * (1 - 0.35 * u * u) -
+      0.233 * Math.pow(outer, 1.3) * tBot +
+      0.2245 * Math.pow(inner, 1.5) * tBot;
+    const peak = Math.exp(-3.486 * (u - 0.2685) * (u - 0.2685));
+    const yS =
+      ny * 1.062 -
+      0.06 +
+      tTop * (1.245 * Math.pow(outer, 1.79) - 0.354 * peak);
+    const xS = uS * sign;
+    x += (xS - nx) * pose.sadDroop;
+    y += (yS - ny) * pose.sadDroop;
+  }
+
+  // 3. Surprised: smooth tall teardrop/egg with upper dome lift
+  if (pose.bottomTaper > 0.001) {
+    const tBot = (ny + 1) * 0.5;
+    const xP = nx * (1.3806 - 0.4203 * Math.pow(tBot, 1.7288));
+    const yP = ny * 1.7826 - 0.2506 - 0.1727 * nx * nx * tBot;
+    x += (xP - nx) * pose.bottomTaper;
+    y += (yP - ny) * pose.bottomTaper;
+  }
+
+  // 4. Concerned: wide cat-eye upper lid with crisp upturned tips & rounded lower bowl
+  if (pose.concernedSquint > 0.001) {
+    const tTop = (1 - ny) * 0.5;
+    const x2 = nx * nx;
+    const xC =
+      nx * (1.03 + 0.48 * Math.pow(tTop, 1.09) + 0.42 * x2 * tTop * tTop);
+    const yC =
+      ny * 0.685 +
+      0.27 -
+      0.42 * (x2 * x2) * Math.pow(tTop, 1.15) +
+      0.01 * (1 - x2) * tTop;
+    x += (xC - nx) * pose.concernedSquint;
+    y += (yC - ny) * pose.concernedSquint;
+  }
+
+  // 5. Sleepy: glossy downward-curving U-crescent with embedded specular streaks
+  if (pose.sleepyArc > 0.001) {
+    const x2 = nx * nx;
+    const xSl = nx * 1.135;
+    const curveY = 0.042 - 0.36 * x2 - 0.16 * x2 * x2;
+    const ySl = curveY + ny * 0.092 * (1 + 0.16 * x2);
+    x += (xSl - nx) * pose.sleepyArc;
+    y += (ySl - ny) * pose.sleepyArc;
+  }
+
+  // Subtle lid-tilt shear for extended expressions (angry / confused / skeptical)
+  if (Math.abs(pose.lidTilt) > 0.01 && pose.sadDroop < 0.5) {
+    const tTop = (1 - ny) * 0.5;
+    y += pose.lidTilt * 0.32 * nx * sign * tTop;
+  }
+
+  return { x, y };
+}
+
+/**
+ * Traces a circle `(centerX, centerY, radius)` inside Hugo's unit disk through
+ * `deformHugoPoint`, scaling by `baseR` and applying `blink` vertically.
+ */
+function traceHugoWarpedCircle(
+  g: Graphics,
+  cx: number,
+  cy: number,
+  baseR: number,
+  blink: number,
+  pose: FacePose,
+  isLeft: boolean,
+  unitCx: number,
+  unitCy: number,
+  unitR: number,
+  segments: number,
+): void {
+  for (let i = 0; i <= segments; i++) {
+    const theta = (i / segments) * Math.PI * 2;
+    const nx = unitCx + unitR * Math.cos(theta);
+    const ny = unitCy + unitR * Math.sin(theta);
+    const pt = deformHugoPoint(nx, ny, pose, isLeft);
+    const px = cx + pt.x * baseR;
+    const py = cy + pt.y * baseR * blink;
+    if (i === 0) {
+      g.moveTo(px, py);
+    } else {
+      g.lineTo(px, py);
+    }
+  }
+  g.closePath();
+}
+
+/**
  * Renders both eyes, eyelids, highlights, eyebrows, and cheeks for any of the 7 vector face styles.
  */
 export function drawVectorEyes(params: VectorEyeDrawParams): void {
@@ -244,91 +374,61 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     const cy = gy;
 
     if (style === "hugo") {
-      // Faithful to classic Hugo PNGs: 98px base radius (196px diameter), 1.1 L/R scale ratio,
-      // pure black eyes, delicate thin eyebrows at y=-180, warm coral-pink cheeks at y=+150, twin white highlights.
+      // Faithful to classic Hugo PNGs: 95.5px base radius, 1.1 L/R scale ratio,
+      // pure black eyes, unified unit-disk warp for eye silhouette + twin morphing highlights,
+      // delicate thin eyebrows at y=-180, opaque warm coral-pink cheeks at y=+150.
       const asym = isLeft ? 1.1 : 1.0;
-      const rx = 98 * pose.eyeWidth * breathe * asym * scale;
-      const ry = Math.max(8 * scale, 98 * pose.eyeHeight * breathe * asym * blink * scale);
+      const baseR = 95.5 * breathe * asym * scale;
+      const effBlink = Math.max(0.06, blink);
 
-      if (pose.sleepyArc > 0.65) {
-        // Classic Hugo thick glossy downward-curving crescent sleep eye with inner white specular streak
-        const arcW = 114 * breathe * asym * scale;
-        const arcY = cy + 12 * scale;
-        const outerDepth = 64 * scale * pose.sleepyArc;
-        const innerDepth = 20 * scale * pose.sleepyArc;
-        g.moveTo(cx - arcW, arcY - outerDepth * 0.4);
-        g.quadraticCurveTo(cx, arcY + outerDepth, cx + arcW, arcY - outerDepth * 0.4);
-        g.quadraticCurveTo(cx, arcY + innerDepth, cx - arcW, arcY - outerDepth * 0.4);
-        g.closePath();
-        g.fill({ color: ink });
+      traceHugoWarpedCircle(g, cx, cy, baseR, effBlink, pose, isLeft, 0, 0, 1, 64);
+      g.fill({ color: ink });
 
-        // Inner white specular highlight streak nestled inside the black crescent
-        const hlW = arcW * 0.66;
-        const hlOuter = outerDepth * 0.72;
-        const hlInner = innerDepth * 1.48;
-        g.moveTo(cx - hlW, arcY - outerDepth * 0.14);
-        g.quadraticCurveTo(cx, arcY + hlOuter, cx + hlW, arcY - outerDepth * 0.14);
-        g.quadraticCurveTo(cx, arcY + hlInner, cx - hlW, arcY - outerDepth * 0.14);
-        g.closePath();
-        g.fill({ color: "#FFFFFF" });
-      } else {
-        const { visibleTop, visibleBottom } = traceEyeContour(
+      if (blink > 0.18) {
+        // Subtle parallax gaze inside the unit disk so highlights stay strictly inside the eye
+        const hlGazeX = Math.max(-0.06, Math.min(0.06, gazeX * 0.05));
+        const hlGazeY = Math.max(-0.05, Math.min(0.05, gazeY * 0.04));
+
+        // Primary upper-right highlight (morphs into curved bean / tall teardrop / wide oval / specular streak)
+        traceHugoWarpedCircle(
           g,
           cx,
           cy,
-          rx,
-          ry,
-          pose.topLid,
-          pose.bottomLid,
-          pose.lidTilt,
+          baseR,
+          effBlink,
+          pose,
           isLeft,
-          2,
-          pose.bottomTaper,
-          pose.sadDroop,
+          0.295 + hlGazeX,
+          -0.295 + hlGazeY,
+          0.387,
+          36,
         );
-        g.fill({ color: ink });
+        g.fill({ color: "#FFFFFF" });
 
-        const apertureH = Math.max(0, visibleBottom - visibleTop);
-        const apertureMidY = (visibleTop + visibleBottom) * 0.5;
-        if (blink > 0.25 && apertureH > 26 * scale) {
-          const hlScale = Math.min(1, apertureH / (ry * 1.45));
-          const mainRx = Math.min(
-            rx * (0.36 - pose.sadDroop * 0.08) * pose.pupilScale * hlScale,
-            apertureH * 0.36,
-          );
-          const mainRy =
-            mainRx * (1 + pose.bottomTaper * 0.45 + pose.sadDroop * 0.2 - pose.topLid * 0.35);
-          const sadShiftX = pose.sadDroop * rx * (isLeft ? 0.04 : -0.22);
-          const sadShiftY = pose.sadDroop * ry * (isLeft ? 0.02 : 0.16);
-          g.ellipse(
-            cx + rx * 0.3 + sadShiftX + gx * 0.12,
-            cy + apertureMidY - apertureH * 0.15 + sadShiftY + gy * 0.08,
-            mainRx,
-            mainRy,
-          );
-          g.fill({ color: "#FFFFFF" });
-
-          if (apertureH > 46 * scale) {
-            const subRx = Math.min(rx * 0.165 * hlScale, apertureH * 0.2);
-            const subRy = subRx * (1 + pose.bottomTaper * 0.4 - pose.topLid * 0.25);
-            g.ellipse(
-              cx - rx * 0.32 + gx * 0.08,
-              cy + apertureMidY + apertureH * 0.24 + gy * 0.06,
-              subRx,
-              subRy,
-            );
-            g.fill({ color: "#FFFFFF" });
-          }
-        }
+        // Secondary lower-left highlight (morphs into tilted sliver / soft oval / lower crescent streak)
+        traceHugoWarpedCircle(
+          g,
+          cx,
+          cy,
+          baseR,
+          effBlink,
+          pose,
+          isLeft,
+          -0.391 + hlGazeX * 0.7,
+          0.391 + hlGazeY * 0.7,
+          0.19,
+          28,
+        );
+        g.fill({ color: "#FFFFFF" });
       }
 
-      // Draw warm coral-pink cheeks AFTER eyes so Surprised teardrop touches cleanly behind the cheek
+      // Draw opaque warm coral-pink cheeks AFTER eyes so Surprised teardrop tucks cleanly behind the cheek
       if (showCheeks && pose.cheekAlpha > 0.02) {
         g.ellipse(cx, cy + 150 * scale, 41 * breathe * scale, 20 * breathe * scale);
-        g.fill({ color: "#FFA39E", alpha: Math.min(1, pose.cheekAlpha) });
+        g.fill({ color: "#FFA39E", alpha: Math.min(1, pose.cheekAlpha * 1.25) });
       }
 
-      if (showEyebrows && pose.bottomTaper < 0.32) {
+      if (showEyebrows && pose.bottomTaper < 0.65) {
         // Classic Hugo thin delicate arched eyebrow at y = -180 * scale
         drawCurvedBrow(
           g,
