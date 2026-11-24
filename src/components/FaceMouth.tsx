@@ -96,6 +96,7 @@ export function FaceMouth({
         drawVectorMouth({
           graphics,
           style: vectorStyle,
+          mouthShape: talkingShape,
           scale,
           talking,
           talkingScale: talkingScaleRef.current,

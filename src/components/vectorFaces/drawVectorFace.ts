@@ -1,7 +1,10 @@
 import type { Graphics } from "pixi.js";
 import type { FacePose } from "../../helpers/face_poses";
 import type {
+  PixiCheekStyle,
   PixiColorRole,
+  PixiEyebrowStyle,
+  PixiMouthShape,
   VectorFaceStyleId,
 } from "../../types/face";
 
@@ -22,11 +25,17 @@ export interface VectorEyeDrawParams {
   colorRole: PixiColorRole;
   showEyebrows: boolean;
   showCheeks: boolean;
+  /** Optional explicit eyebrow part style; falls back to the eye style's default when omitted. */
+  eyebrowStyle?: PixiEyebrowStyle | null;
+  /** Optional explicit cheek part style; falls back to the eye style's default when omitted. */
+  cheekStyle?: PixiCheekStyle | null;
 }
 
 export interface VectorMouthDrawParams {
   graphics: Graphics;
   style: VectorFaceStyleId;
+  /** Explicit composable mouth shape; falls back to the eye style's default mouth when omitted. */
+  mouthShape?: PixiMouthShape;
   scale: number;
   talking: boolean;
   talkingScale: number;
@@ -340,7 +349,164 @@ function traceHugoWarpedCircle(
 }
 
 /**
- * Renders both eyes, eyelids, highlights, eyebrows, and cheeks for any of the 7 vector face styles.
+ * Resolves the effective cheek style for a vector face, falling back to the
+ * eye style's default when no explicit `cheekStyle` is supplied.
+ */
+export function resolveCheekStyle(
+  style: VectorFaceStyleId,
+  explicit?: PixiCheekStyle | null,
+): PixiCheekStyle | null {
+  if (explicit !== undefined) return explicit;
+  if (style === "hugo") return "coralOval";
+  if (style === "mochi") return "pinkBlush";
+  return null;
+}
+
+/**
+ * Resolves the effective eyebrow style for a vector face, falling back to the
+ * eye style's default when omitted or set to the legacy `"vector"` sentinel.
+ */
+export function resolveEyebrowStyle(
+  style: VectorFaceStyleId,
+  explicit?: PixiEyebrowStyle | null,
+): Exclude<PixiEyebrowStyle, "vector"> | null {
+  if (explicit === null) return null;
+  if (explicit !== undefined && explicit !== "vector") return explicit;
+  if (style === "hugo") return "delicateArch";
+  if (style === "pebble") return "softArch";
+  if (style === "orbit") return "thickArch";
+  if (style === "slate") return "flatBar";
+  return null;
+}
+
+/**
+ * Resolves the effective mouth shape for a vector face, falling back to the
+ * eye style's default mouth when no explicit `mouthShape` is supplied.
+ */
+export function resolveMouthShape(
+  style: VectorFaceStyleId,
+  explicit?: PixiMouthShape,
+): PixiMouthShape {
+  if (explicit !== undefined) return explicit;
+  switch (style) {
+    case "hugo":
+      return "Hugo";
+    case "dash":
+      return "Equalizer";
+    case "pixel":
+      return "PixelMatrix";
+    case "mochi":
+      return "Cat";
+    case "slate":
+      return "Capsule";
+    case "orbit":
+      return "Arc";
+    case "pebble":
+      return "SoftCurve";
+  }
+}
+
+/**
+ * Renders a single composable cheek part relative to the eye center `(cx, cy)`.
+ */
+export function drawVectorCheek(
+  g: Graphics,
+  cheekStyle: PixiCheekStyle,
+  cx: number,
+  cy: number,
+  side: -1 | 1,
+  breathe: number,
+  scale: number,
+  pose: FacePose,
+): void {
+  if (pose.cheekAlpha <= 0.02) return;
+  if (cheekStyle === "coralOval") {
+    g.ellipse(cx, cy + 150 * scale, 41 * breathe * scale, 20 * breathe * scale);
+    g.fill({ color: "#FFA39E", alpha: Math.min(1, pose.cheekAlpha * 1.25) });
+  } else if (cheekStyle === "pinkBlush") {
+    g.ellipse(cx + side * 38 * scale, cy + 102 * scale, 56 * scale, 26 * scale);
+    g.fill({ color: "#FB7185", alpha: pose.cheekAlpha * 0.6 });
+  } else {
+    g.ellipse(
+      cx + side * 24 * scale,
+      cy + 118 * scale,
+      48 * breathe * scale,
+      22 * breathe * scale,
+    );
+    g.fill({ color: "#FDA4AF", alpha: Math.min(0.85, pose.cheekAlpha * 0.85) });
+  }
+}
+
+/**
+ * Renders a single composable eyebrow part relative to the eye anchor `(bx, by)`.
+ */
+export function drawVectorEyebrow(
+  g: Graphics,
+  eyebrowStyle: Exclude<PixiEyebrowStyle, "vector">,
+  bx: number,
+  by: number,
+  isLeft: boolean,
+  breathe: number,
+  scale: number,
+  pose: FacePose,
+  ink: string,
+  colorRole: PixiColorRole,
+): void {
+  if (eyebrowStyle === "delicateArch" || eyebrowStyle === "Hugo") {
+    drawCurvedBrow(
+      g,
+      bx,
+      by - 180 * scale + pose.browY * 24 * scale,
+      37 * breathe * scale,
+      1.15 + pose.browArch * 0.4,
+      pose.browTilt * 0.35,
+      isLeft,
+      Math.max(1.5, 3.2 * scale),
+      ink,
+    );
+  } else if (eyebrowStyle === "softArch") {
+    drawCurvedBrow(
+      g,
+      bx,
+      by - 148 * scale + pose.browY * 60 * scale,
+      58 * scale,
+      pose.browArch,
+      pose.browTilt,
+      isLeft,
+      Math.max(5, 20 * scale),
+      ink,
+    );
+  } else if (eyebrowStyle === "thickArch") {
+    drawCurvedBrow(
+      g,
+      bx,
+      by - 155 * scale + pose.browY * 60 * scale,
+      72 * scale,
+      pose.browArch * 0.4,
+      pose.browTilt,
+      isLeft,
+      Math.max(5, 20 * scale),
+      ink,
+    );
+  } else {
+    drawCurvedBrow(
+      g,
+      bx,
+      by - 120 * scale + pose.browY * 50 * scale,
+      72 * scale,
+      0,
+      pose.browTilt * 0.8,
+      isLeft,
+      Math.max(4, 15 * scale),
+      colorRole === "accent" ? ink : "#64748B",
+      true,
+    );
+  }
+}
+
+/**
+ * Renders both eyes, eyelids, highlights, and independently composed eyebrows and cheeks
+ * for any Pixi vector face configuration.
  */
 export function drawVectorEyes(params: VectorEyeDrawParams): void {
   const {
@@ -357,11 +523,15 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     colorRole,
     showEyebrows,
     showCheeks,
+    eyebrowStyle,
+    cheekStyle,
   } = params;
 
   g.clear();
 
   const ink = resolveVectorInkHex(themeColor, style, colorRole);
+  const resolvedCheek = showCheeks ? resolveCheekStyle(style, cheekStyle) : null;
+  const resolvedBrow = showEyebrows ? resolveEyebrowStyle(style, eyebrowStyle) : null;
   const eyeSep = style === "hugo" ? 300 * scale : 270 * scale;
   const gx = gazeX * 40 * scale;
   const gy = gazeY * 30 * scale;
@@ -372,11 +542,17 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     const breathe = isLeft ? breatheLeft : breatheRight;
     const cx = side * eyeSep + gx;
     const cy = gy;
+    let browAnchorX = cx;
+    let browAnchorY = cy;
+
+    // Soft translucent blush styles render behind the eye silhouette
+    if (resolvedCheek && resolvedCheek !== "coralOval") {
+      drawVectorCheek(g, resolvedCheek, cx, cy, side, breathe, scale, pose);
+    }
 
     if (style === "hugo") {
       // Faithful to classic Hugo PNGs: 95.5px base radius, 1.1 L/R scale ratio,
-      // pure black eyes, unified unit-disk warp for eye silhouette + twin morphing highlights,
-      // delicate thin eyebrows at y=-180, opaque warm coral-pink cheeks at y=+150.
+      // pure black eyes, unified unit-disk warp for eye silhouette + twin morphing highlights.
       const asym = isLeft ? 1.1 : 1.0;
       const baseR = 95.5 * breathe * asym * scale;
       const effBlink = Math.max(0.06, blink);
@@ -421,33 +597,7 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         );
         g.fill({ color: "#FFFFFF" });
       }
-
-      // Draw opaque warm coral-pink cheeks AFTER eyes so Surprised teardrop tucks cleanly behind the cheek
-      if (showCheeks && pose.cheekAlpha > 0.02) {
-        g.ellipse(cx, cy + 150 * scale, 41 * breathe * scale, 20 * breathe * scale);
-        g.fill({ color: "#FFA39E", alpha: Math.min(1, pose.cheekAlpha * 1.25) });
-      }
-
-      if (showEyebrows && pose.bottomTaper < 0.65) {
-        // Classic Hugo thin delicate arched eyebrow at y = -180 * scale
-        drawCurvedBrow(
-          g,
-          cx,
-          cy - 180 * scale + pose.browY * 24 * scale,
-          37 * breathe * scale,
-          1.15 + pose.browArch * 0.4,
-          pose.browTilt * 0.35,
-          isLeft,
-          Math.max(1.5, 3.2 * scale),
-          ink,
-        );
-      }
     } else if (style === "mochi") {
-      if (showCheeks && pose.cheekAlpha > 0.02) {
-        g.ellipse(cx + side * 38 * scale, cy + 102 * scale, 56 * scale, 26 * scale);
-        g.fill({ color: "#FB7185", alpha: pose.cheekAlpha * 0.6 });
-      }
-
       if (pose.bottomLid > 0.32 && blink > 0.3) {
         const arcW = 68 * scale;
         const arcH = 42 * scale;
@@ -513,20 +663,6 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         );
         g.fill({ color: "#FFFFFF" });
       }
-
-      if (showEyebrows) {
-        drawCurvedBrow(
-          g,
-          cx,
-          cy - 148 * scale + pose.browY * 60 * scale,
-          58 * scale,
-          pose.browArch,
-          pose.browTilt,
-          isLeft,
-          Math.max(5, 20 * scale),
-          ink,
-        );
-      }
     } else if (style === "dash") {
       const rx = 90 * pose.eyeWidth * breathe * scale;
       const ry = Math.max(8 * scale, 86 * pose.eyeHeight * breathe * blink * scale);
@@ -561,6 +697,8 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     } else if (style === "orbit") {
       const eyeCenterX = side * eyeSep + gx * 0.45;
       const eyeCenterY = gy * 0.45;
+      browAnchorX = eyeCenterX;
+      browAnchorY = eyeCenterY;
       const rx = 112 * breathe * scale;
       const ry = Math.max(10 * scale, 112 * pose.eyeHeight * breathe * blink * scale);
 
@@ -603,20 +741,6 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         );
         g.fill({ color: ink });
       }
-
-      if (showEyebrows) {
-        drawCurvedBrow(
-          g,
-          eyeCenterX,
-          eyeCenterY - 155 * scale + pose.browY * 60 * scale,
-          72 * scale,
-          pose.browArch * 0.4,
-          pose.browTilt,
-          isLeft,
-          Math.max(5, 20 * scale),
-          ink,
-        );
-      }
     } else if (style === "pixel") {
       const cols = 5;
       const rows = 5;
@@ -644,6 +768,8 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     } else if (style === "slate") {
       const px = side * eyeSep + gx * 0.6;
       const py = gy * 0.6;
+      browAnchorX = px;
+      browAnchorY = py;
       const rx = 68 * pose.eyeWidth * breathe * scale;
       const ry = Math.max(8 * scale, 68 * pose.eyeHeight * breathe * blink * scale);
 
@@ -660,33 +786,40 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         2,
       );
       g.fill({ color: ink });
+    }
 
-      if (showEyebrows) {
-        drawCurvedBrow(
-          g,
-          px,
-          py - 120 * scale + pose.browY * 50 * scale,
-          72 * scale,
-          0,
-          pose.browTilt * 0.8,
-          isLeft,
-          Math.max(4, 15 * scale),
-          "#64748B",
-          true,
-        );
-      }
+    // Opaque coral-pink cheeks render AFTER eyes so Hugo's Surprised teardrop tucks cleanly behind the cheek
+    if (resolvedCheek === "coralOval") {
+      drawVectorCheek(g, resolvedCheek, cx, cy, side, breathe, scale, pose);
+    }
+
+    // Composable eyebrows (Hugo hides brows during Surprised when bottomTaper >= 0.65)
+    if (resolvedBrow && !(style === "hugo" && pose.bottomTaper >= 0.65)) {
+      drawVectorEyebrow(
+        g,
+        resolvedBrow,
+        browAnchorX,
+        browAnchorY,
+        isLeft,
+        breathe,
+        scale,
+        pose,
+        ink,
+        colorRole,
+      );
     }
   }
 }
 
 /**
- * Renders a speech-only neutral mouth for each of the 7 vector face styles
+ * Renders a speech-only neutral mouth for any composable `PixiMouthShape`
  * (emotions are expressed solely by the eyes).
  */
 export function drawVectorMouth(params: VectorMouthDrawParams): void {
   const {
     graphics: g,
     style,
+    mouthShape,
     scale,
     talking,
     talkingScale,
@@ -698,10 +831,11 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
   g.clear();
 
   const ink = resolveVectorInkHex(themeColor, style, colorRole);
+  const shape = resolveMouthShape(style, mouthShape);
   const mouthY = 240 * scale;
   const talkAmt = talking ? talkingScale : 0;
 
-  if (style === "hugo") {
+  if (shape === "Hugo") {
     // Exact classic Hugo mouth geometry
     const width = 40 * scale;
     const smileDepth = 20 * scale;
@@ -716,7 +850,7 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  if (style === "dash") {
+  if (shape === "Equalizer") {
     if (talkAmt > 0.08) {
       const bars = 7;
       for (let i = 0; i < bars; i++) {
@@ -738,7 +872,7 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  if (style === "pixel") {
+  if (shape === "PixelMatrix") {
     const cols = 9;
     const rows = 3;
     const dot = 22 * scale;
@@ -760,7 +894,7 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  if (style === "mochi") {
+  if (shape === "Cat") {
     const open = talkAmt * 70 * scale;
     if (open > 12 * scale) {
       g.ellipse(0, mouthY + 6 * scale, 44 * scale, 14 * scale + open * 0.6);
@@ -776,7 +910,7 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  if (style === "slate") {
+  if (shape === "Capsule") {
     const halfW = 84 * scale;
     const open = talkAmt * 65 * scale;
     if (open > 10 * scale) {
@@ -792,7 +926,7 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  if (style === "orbit") {
+  if (shape === "Arc") {
     const halfW = 86 * scale;
     const open = talkAmt * 70 * scale;
     g.moveTo(-halfW, mouthY);
@@ -806,7 +940,46 @@ export function drawVectorMouth(params: VectorMouthDrawParams): void {
     return;
   }
 
-  // Pebble: friendly neutral curved mouth opening on speech
+  if (shape === "Ellipse") {
+    const rx = (52 + talkAmt * 22) * scale;
+    const ry = (8 + talkAmt * 44) * scale;
+    g.ellipse(0, mouthY + 6 * scale, rx, ry);
+    g.fill({ color: ink });
+    return;
+  }
+
+  if (shape === "ZigZag") {
+    const halfW = 92 * scale;
+    const segs = 6;
+    const amp = (8 + talkAmt * 36) * scale;
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const x = -halfW + t * halfW * 2;
+      const y = mouthY + (i === 0 || i === segs ? 0 : i % 2 === 1 ? -amp : amp);
+      if (i === 0) {
+        g.moveTo(x, y);
+      } else {
+        g.lineTo(x, y);
+      }
+    }
+    g.stroke({ width: Math.max(4, 14 * scale), color: ink, cap: "round", join: "round" });
+    return;
+  }
+
+  if (shape === "Beak") {
+    const halfW = 54 * scale;
+    const topH = 26 * scale;
+    const open = talkAmt * 42 * scale;
+    g.moveTo(-halfW, mouthY);
+    g.lineTo(0, mouthY - topH);
+    g.lineTo(halfW, mouthY);
+    g.lineTo(0, mouthY + 18 * scale + open);
+    g.closePath();
+    g.fill({ color: ink });
+    return;
+  }
+
+  // SoftCurve (default): friendly neutral curved mouth opening on speech
   const halfW = 82 * scale;
   const open = talkAmt * 75 * scale;
   g.moveTo(-halfW, mouthY);
