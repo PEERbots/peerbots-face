@@ -24,11 +24,14 @@ import { PoweredByVizij } from "./PoweredByVizij";
 
 export interface CharacterSelectionControlsProps {
   enableVizij?: boolean;
+  /** When true, expands researcher/technical engine & profile details by default. */
+  showTechnicalDetails?: boolean;
   labels?: Partial<FaceUiLabels>;
 }
 
 export function CharacterSelectionControls({
   enableVizij = true,
+  showTechnicalDetails = false,
   labels,
 }: CharacterSelectionControlsProps = {}) {
   const uiLabels = resolveFaceUiLabels(labels);
@@ -42,6 +45,7 @@ export function CharacterSelectionControls({
   const setVoice = useFaceStore((state) => state.setVoice);
   const setFace = useFaceStore((state) => state.setFace);
   const setFaceSettings = useFaceStore((state) => state.setFaceSettings);
+  const triggerBlink = useFaceStore((state) => state.triggerBlink);
   const speechAllowed = useFaceStore((state) => state.speechAllowed);
   const unlockAudio = useFaceStore((state) => state.unlockAudio);
 
@@ -53,6 +57,10 @@ export function CharacterSelectionControls({
     : availableFaces.filter((f) => f.kind !== "Vizij");
 
   const caps = getFaceCapabilities(selectedFace);
+  const isVectorPixiFace =
+    selectedFace?.kind === "PixiFace" &&
+    selectedFace.type === "avatar" &&
+    selectedFace.eyes.kind === "vector";
 
   return (
     <SettingsPanel title={uiLabels.characterSelection} headingLevel={4}>
@@ -330,8 +338,29 @@ export function CharacterSelectionControls({
                       }}
                     />
                   </Field>
-                </div>
-              )}
+                {isVectorPixiFace && (
+                  <FieldGroup label={uiLabels.faceExpressivity}>
+                    <SliderWithNumberField
+                      aria-label={uiLabels.faceExpressivity}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={faceSettings.vizijSettings?.faceExpressivity ?? 1}
+                      onChange={(val) => {
+                        const vizijSettings = (faceSettings.vizijSettings ??
+                          defaultFaceSettings.vizijSettings) as VizijSettings;
+                        setFaceSettings({
+                          vizijSettings: {
+                            ...vizijSettings,
+                            faceExpressivity: val,
+                          },
+                        });
+                      }}
+                    />
+                  </FieldGroup>
+                )}
+              </div>
+            )}
 
               {selectedFace.type === "text" && (
                 <Field
@@ -366,6 +395,44 @@ export function CharacterSelectionControls({
               )}
             </div>
           </>
+        )}
+
+        {selectedFace && (
+          <details
+            open={showTechnicalDetails}
+            className="pbf:border-t pbf:border-slate-200 pbf:pt-2"
+            data-testid="face-technical-details"
+          >
+            <summary className="pbf:cursor-pointer pbf:text-xs pbf:font-semibold pbf:text-slate-600 pbf:select-none">
+              Technical &amp; Profile Details
+            </summary>
+            <div className="pbf:mt-2 pbf:space-y-2 pbf:text-xs pbf:text-slate-700">
+              <div className="pbf:flex pbf:items-center pbf:justify-between">
+                <span className="pbf:text-slate-600">Renderer Engine</span>
+                <span className="pbf:font-mono pbf:font-semibold">
+                  {selectedFace.kind === "Vizij"
+                    ? "Vizij"
+                    : isVectorPixiFace
+                      ? "PixiJS (Vector)"
+                      : "PixiJS"}
+                </span>
+              </div>
+              <div className="pbf:flex pbf:items-center pbf:justify-between">
+                <span className="pbf:text-slate-600">Profile Contract</span>
+                <span className="pbf:font-mono">vizij-face + peerbots-face v1</span>
+              </div>
+              <div className="pbf:pt-1">
+                <Button
+                  variant="outline"
+                  color="darkblue"
+                  size="sm"
+                  onClick={() => triggerBlink()}
+                >
+                  Trigger Blink
+                </Button>
+              </div>
+            </div>
+          </details>
         )}
       </div>
     </SettingsPanel>

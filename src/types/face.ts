@@ -77,13 +77,33 @@ export interface AmplitudePoint {
 
 export type PixiMouthShape = "Hugo" | "ZigZag" | "Ellipse" | "Beak";
 
+export type VectorFaceStyleId =
+  | "hugo"
+  | "mochi"
+  | "pebble"
+  | "dash"
+  | "orbit"
+  | "pulse"
+  | "pixel"
+  | "slate";
+
+export type PixiEyeConfig =
+  | { kind: "spritesheet"; path: string }
+  | { kind: "vector"; style: VectorFaceStyleId };
+
+export type PixiColorRole = "background" | "accent";
+
+export type FaceStyleCategory = "cute" | "balanced" | "sleek" | "classic";
+
 export type PixiAvatar = FaceBase & {
   kind: "PixiFace";
   type: "avatar";
   mouth: PixiMouthShape;
-  eyes: { kind: "spritesheet"; path: string };
-  cheeks: { kind: "texture"; path: string } | null;
-  eyebrows: "Hugo" | null;
+  eyes: PixiEyeConfig;
+  cheeks: { kind: "texture"; path: string } | { kind: "vector" } | null;
+  eyebrows: "Hugo" | "vector" | null;
+  colorRole?: PixiColorRole;
+  category?: FaceStyleCategory;
 };
 
 export type PixiText = FaceBase & {
@@ -107,6 +127,8 @@ export interface FaceGaze {
   x: number;
   /** Vertical normalized gaze target in [-1, 1] */
   y: number;
+  /** Optional attention weight in [0, 1] (0 = autonomous idle, 1 = hold target) */
+  weight?: number;
 }
 
 export interface VizijSettings {
@@ -186,14 +208,13 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       name: "Hugo",
       mouth: "Hugo",
       eyes: {
-        kind: "spritesheet",
-        path: `${base}/Hugo/hugo_spritesheet.json`,
+        kind: "vector",
+        style: "hugo",
       },
-      cheeks: {
-        kind: "texture",
-        path: `${base}/Hugo/cheek.png`,
-      },
-      eyebrows: "Hugo",
+      cheeks: { kind: "vector" },
+      eyebrows: "vector",
+      colorRole: "background",
+      category: "cute",
     },
     {
       kind: "PixiFace",
@@ -201,11 +222,13 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       name: "Simple",
       mouth: "Ellipse",
       eyes: {
-        kind: "spritesheet",
-        path: `${base}/Hugo/hugo_spritesheet.json`,
+        kind: "vector",
+        style: "hugo",
       },
       cheeks: null,
       eyebrows: null,
+      colorRole: "background",
+      category: "classic",
     },
     {
       kind: "PixiFace",
@@ -218,6 +241,8 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       },
       cheeks: null,
       eyebrows: null,
+      colorRole: "background",
+      category: "classic",
     },
     {
       kind: "PixiFace",
@@ -225,6 +250,104 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       name: "Display",
       showEmotion: "emoticon",
       showText: true,
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Mochi",
+      mouth: "Hugo",
+      eyes: {
+        kind: "vector",
+        style: "mochi",
+      },
+      cheeks: { kind: "vector" },
+      eyebrows: null,
+      colorRole: "background",
+      category: "cute",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Pebble",
+      mouth: "Hugo",
+      eyes: {
+        kind: "vector",
+        style: "pebble",
+      },
+      cheeks: null,
+      eyebrows: "vector",
+      colorRole: "background",
+      category: "cute",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Dash",
+      mouth: "Ellipse",
+      eyes: {
+        kind: "vector",
+        style: "dash",
+      },
+      cheeks: null,
+      eyebrows: null,
+      colorRole: "accent",
+      category: "balanced",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Orbit",
+      mouth: "Hugo",
+      eyes: {
+        kind: "vector",
+        style: "orbit",
+      },
+      cheeks: null,
+      eyebrows: "vector",
+      colorRole: "background",
+      category: "balanced",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Pulse",
+      mouth: "ZigZag",
+      eyes: {
+        kind: "vector",
+        style: "pulse",
+      },
+      cheeks: null,
+      eyebrows: null,
+      colorRole: "accent",
+      category: "sleek",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Pixel",
+      mouth: "ZigZag",
+      eyes: {
+        kind: "vector",
+        style: "pixel",
+      },
+      cheeks: null,
+      eyebrows: null,
+      colorRole: "accent",
+      category: "sleek",
+    },
+    {
+      kind: "PixiFace",
+      type: "avatar",
+      name: "Slate",
+      mouth: "Ellipse",
+      eyes: {
+        kind: "vector",
+        style: "slate",
+      },
+      cheeks: null,
+      eyebrows: "vector",
+      colorRole: "background",
+      category: "sleek",
     },
   ];
 }
@@ -293,11 +416,15 @@ export const getFaceCapabilities = (face?: FaceBase): FaceCapabilities => {
   if (face.kind === "PixiFace" && "type" in face) {
     const pixiFace = face as PixiFace;
     if (pixiFace.type === "avatar") {
+      const isVector = pixiFace.eyes.kind === "vector";
       return {
-        canExpressColor: "Background Color Change",
-        canExpressEmotion: "Image Swap",
+        canExpressColor:
+          pixiFace.colorRole === "accent"
+            ? "Accent Color Change"
+            : "Background Color Change",
+        canExpressEmotion: isVector ? "Animated Expression" : "Smooth Swap",
         canLipSync:
-          pixiFace.mouth === "ZigZag"
+          pixiFace.mouth === "ZigZag" && !isVector
             ? "Random mouth motions"
             : "Timed mouth motions",
       };

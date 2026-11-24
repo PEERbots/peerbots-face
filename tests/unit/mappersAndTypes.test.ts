@@ -160,7 +160,17 @@ describe("face definitions, capabilities, renderer registry & environment", () =
     const hugo = customBuiltIns[0];
     expect(hugo.kind).toBe("PixiFace");
     if (hugo.kind === "PixiFace" && hugo.type === "avatar") {
-      expect(hugo.eyes.path).toBe("/cdn/faces/Hugo/hugo_spritesheet.json");
+      expect(hugo.eyes).toEqual({ kind: "vector", style: "hugo" });
+    }
+    const robotic = customBuiltIns[2];
+    if (
+      robotic.kind === "PixiFace" &&
+      robotic.type === "avatar" &&
+      robotic.eyes.kind === "spritesheet"
+    ) {
+      expect(robotic.eyes.path).toBe(
+        "/cdn/faces/Robotic/robotic_spritesheet.json",
+      );
     }
   });
 
@@ -173,8 +183,14 @@ describe("face definitions, capabilities, renderer registry & environment", () =
     expect(getFaceCapabilities(builtInFaces[0]).canLipSync).toBe(
       "Timed mouth motions",
     );
+    expect(getFaceCapabilities(builtInFaces[0]).canExpressEmotion).toBe(
+      "Animated Expression",
+    );
     expect(getFaceCapabilities(builtInFaces[2]).canLipSync).toBe(
       "Random mouth motions",
+    );
+    expect(getFaceCapabilities(builtInFaces[2]).canExpressEmotion).toBe(
+      "Smooth Swap",
     );
     expect(getFaceCapabilities(builtInFaces[3]).canLipSync).toBe(
       "Cursor movement",
@@ -188,7 +204,8 @@ describe("face definitions, capabilities, renderer registry & environment", () =
         showText: true,
       } as (typeof builtInFaces)[3]).canExpressEmotion,
     ).toBe(false);
-    expect(getFaceCapabilities(availableFaces[4]).canExpressEmotion).toBe(
+    const vizijFace = availableFaces.find((f) => f.kind === "Vizij");
+    expect(getFaceCapabilities(vizijFace).canExpressEmotion).toBe(
       "Animated Expression",
     );
     expect(getFaceCapabilities({ kind: "Unknown", name: "Mystery" })).toEqual({

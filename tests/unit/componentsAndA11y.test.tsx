@@ -79,7 +79,9 @@ describe("FaceView, FaceAudioPrompt, FaceSettingsPanel & WCAG 2.1 AA Accessibili
     expect(screen.getByText(":D")).toBeInTheDocument();
 
     // Switch to Vizij 3D face in headless fallback
-    store.getState().setFace(availableFaces[4]);
+    const vizijFace = availableFaces.find((f) => f.kind === "Vizij");
+    expect(vizijFace).toBeDefined();
+    store.getState().setFace(vizijFace!);
     rerender(
       <PeerbotsI18nProvider>
         <FaceStoreProvider store={store}>
@@ -194,6 +196,11 @@ describe("FaceView, FaceAudioPrompt, FaceSettingsPanel & WCAG 2.1 AA Accessibili
     // Click Allow Speech button inside CharacterSelectionControls
     fireEvent.click(screen.getByRole("button", { name: /allow speech/i }));
     expect(store.getState().speechAllowed).toBe(true);
+
+    // Trigger Blink inside researcher technical details disclosure
+    expect(screen.getByTestId("face-technical-details")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /trigger blink/i }));
+    expect(store.getState().blinkNonce).toBe(1);
 
     // Switch to Custom Face (Vizij) and check Vizij expressivity + GLB upload field a11y
     store.getState().setFaceByName("Custom Face");

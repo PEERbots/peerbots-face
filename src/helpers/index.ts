@@ -4,3 +4,4 @@ export * from "./color_mappers";
 export * from "./voice_helpers";
 export * from "./environment";
 export * from "./fullscreen";
+export * from "./face_poses";

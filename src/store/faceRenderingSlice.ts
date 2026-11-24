@@ -8,6 +8,11 @@ import {
   type FaceGaze,
   type FaceSettings,
 } from "../types/face";
+import type {
+  FacsOverrides,
+  PeerbotsConversationState,
+  VizijStandardExpression,
+} from "../types/profile";
 
 export interface FaceRenderingSliceOptions {
   assetBaseUrl?: string;
@@ -21,11 +26,19 @@ export interface FaceRenderingSlice {
   selectedFace: Face;
   faceSettings: FaceSettings;
   gaze: FaceGaze;
+  blinkNonce: number;
+  conversationState: PeerbotsConversationState;
+  extendedExpression: VizijStandardExpression | null;
+  facsOverrides: FacsOverrides;
   setFace: (face: Face) => void;
   setFaceByName: (name: string) => void;
   setFaceSettings: (settings: Partial<FaceSettings>) => void;
   resetPositioning: () => void;
   setGaze: (gaze: FaceGaze) => void;
+  triggerBlink: () => void;
+  setConversationState: (state: PeerbotsConversationState) => void;
+  setExtendedExpression: (expression: VizijStandardExpression | null) => void;
+  setFacsOverrides: (overrides: FacsOverrides) => void;
   setLanguage: (lang: string | null) => void;
   setAssetBaseUrl: (assetBaseUrl: string) => void;
 }
@@ -35,6 +48,13 @@ function clampUnit(value: number): number {
     return 0;
   }
   return Math.max(-1, Math.min(1, value));
+}
+
+function clampWeight(value: number): number {
+  if (Number.isNaN(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
 }
 
 export function mergeFaceSettings(
@@ -103,6 +123,10 @@ export function createFaceRenderingSlice(
     selectedFace: initialSelectedFace,
     faceSettings: initialMergedSettings,
     gaze: { x: 0, y: 0 },
+    blinkNonce: 0,
+    conversationState: "idle",
+    extendedExpression: null,
+    facsOverrides: {},
 
     setFace: (face) => {
       set({ selectedFace: face });
@@ -132,12 +156,36 @@ export function createFaceRenderingSlice(
     },
 
     setGaze: (gaze) => {
-      set({
-        gaze: {
-          x: clampUnit(gaze.x),
-          y: clampUnit(gaze.y),
-        },
-      });
+      const next: FaceGaze = {
+        x: clampUnit(gaze.x),
+        y: clampUnit(gaze.y),
+      };
+      if (gaze.weight !== undefined) {
+        next.weight = clampWeight(gaze.weight);
+      }
+      set({ gaze: next });
+    },
+
+    triggerBlink: () => {
+      set((state) => ({ blinkNonce: state.blinkNonce + 1 }));
+    },
+
+    setConversationState: (conversationState) => {
+      set({ conversationState });
+    },
+
+    setExtendedExpression: (extendedExpression) => {
+      set({ extendedExpression });
+    },
+
+    setFacsOverrides: (facsOverrides) => {
+      const clamped: FacsOverrides = {};
+      for (const [key, val] of Object.entries(facsOverrides)) {
+        if (typeof val === "number" && !Number.isNaN(val)) {
+          clamped[key as keyof FacsOverrides] = clampWeight(val);
+        }
+      }
+      set({ facsOverrides: clamped });
     },
 
     setLanguage: (lang) => {

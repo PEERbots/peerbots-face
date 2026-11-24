@@ -87,3 +87,96 @@ export const DisplayTextWithCaptions: Story = {
     );
   },
 };
+
+export const MochiCuteHappy: Story = {
+  render: () => {
+    const mochi = builtInFaces.find((f) => f.name === "Mochi") ?? builtInFaces[0];
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: mochi,
+      initialMessage: {
+        title: "Yay",
+        speech: "Nice to meet you!",
+        color: "Pink",
+        emotion: "Happy",
+      },
+    });
+    return (
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[420px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    );
+  },
+};
+
+export const DashDarkVisorAccent: Story = {
+  render: () => {
+    const dash = builtInFaces.find((f) => f.name === "Dash") ?? builtInFaces[0];
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: dash,
+      initialMessage: {
+        title: "Ready",
+        speech: "Systems online.",
+        color: "Light Blue",
+        emotion: "Neutral",
+      },
+    });
+    return (
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[420px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    );
+  },
+};
+
+export const PulseSleekAbstract: Story = {
+  render: () => {
+    const pulse = builtInFaces.find((f) => f.name === "Pulse") ?? builtInFaces[0];
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: pulse,
+      initialMessage: {
+        title: "Listening",
+        speech: "Go ahead, I am listening.",
+        color: "Green",
+        emotion: "Neutral",
+      },
+    });
+    store.getState().setConversationState("listening");
+    return (
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[420px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    );
+  },
+};
+
+export const SlateCalmArchitectural: Story = {
+  render: () => {
+    const slate = builtInFaces.find((f) => f.name === "Slate") ?? builtInFaces[0];
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: slate,
+      initialMessage: {
+        title: "Focus",
+        speech: "Let us work through this step by step.",
+        color: "Grey",
+        emotion: "Neutral",
+      },
+    });
+    return (
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[420px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    );
+  },
+};

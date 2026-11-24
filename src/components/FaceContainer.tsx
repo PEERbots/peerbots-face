@@ -11,6 +11,7 @@ import { FaceEyes } from "./FaceEyes";
 import { FaceMouth } from "./FaceMouth";
 import { FaceText } from "./FaceText";
 import { FaceBackground } from "./FaceBackground";
+import { resolveAvatarBackgroundHex } from "./vectorFaces/drawVectorFace";
 
 function stepRendererBackgroundColor(renderer: Renderer, targetHex: string): void {
   try {
@@ -91,8 +92,23 @@ export function FaceContainer({ frozen = false }: { frozen?: boolean }) {
 
   useTick(() => {
     if (app?.renderer && lastMessage) {
-      const targetColor =
+      const themeHex =
         color_mapping[lastMessage.color] ?? color_mapping["Light Blue"];
+      const vectorStyle =
+        selectedFace?.kind === "PixiFace" &&
+        selectedFace.type === "avatar" &&
+        selectedFace.eyes.kind === "vector"
+          ? selectedFace.eyes.style
+          : null;
+      const colorRole =
+        selectedFace?.kind === "PixiFace" && selectedFace.type === "avatar"
+          ? (selectedFace.colorRole ?? "background")
+          : "background";
+      const targetColor = resolveAvatarBackgroundHex(
+        themeHex,
+        vectorStyle,
+        colorRole,
+      );
       stepRendererBackgroundColor(app.renderer, targetColor);
     }
   });

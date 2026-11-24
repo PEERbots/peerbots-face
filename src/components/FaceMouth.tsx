@@ -2,6 +2,17 @@ import { useRef, useMemo, useCallback } from "react";
 import { Graphics } from "pixi.js";
 import { useTick, useExtend } from "@pixi/react";
 import { useFaceStore } from "../store/FaceStoreContext";
+import { color_mapping } from "../helpers/color_mappers";
+import {
+  NEUTRAL_POSE,
+  resolveTargetPose,
+  stepFacePose,
+  type FacePose,
+} from "../helpers/face_poses";
+import {
+  drawVectorMouth,
+  resolveAvatarBackgroundHex,
+} from "./vectorFaces/drawVectorFace";
 
 const ZIG_ZAG_POINTS = [
   { x: 0, y: -10 },
@@ -41,13 +52,30 @@ export function FaceMouth({
 
   const talking = useFaceStore((state) => state.isSpeaking);
   const face = useFaceStore((state) => state.selectedFace);
-  const pixiSettings = useFaceStore((state) => state.faceSettings.pixiSettings);
+  const message = useFaceStore((state) => state.lastMessage);
+  const conversationState = useFaceStore((state) => state.conversationState);
+  const extendedExpression = useFaceStore((state) => state.extendedExpression);
+  const facsOverrides = useFaceStore((state) => state.facsOverrides);
+  const faceSettings = useFaceStore((state) => state.faceSettings);
+  const pixiSettings = faceSettings.pixiSettings;
   const currentAmplitude = useFaceStore((state) => state.currentAmplitude);
   const amplitudeData = useFaceStore((state) => state.amplitudeData);
   const speechStartTime = useFaceStore((state) => state.speechStartTime);
 
-  const talkingScaleRef = useRef<number>(1);
+  const talkingScaleRef = useRef<number>(0);
   const talkingTimeRef = useRef<number>(0);
+  const currentPoseRef = useRef<FacePose>({ ...NEUTRAL_POSE });
+
+  const isVectorAvatar =
+    face?.kind === "PixiFace" &&
+    face.type === "avatar" &&
+    face.eyes.kind === "vector";
+  const vectorStyle =
+    isVectorAvatar && face.eyes.kind === "vector" ? face.eyes.style : null;
+  const colorRole =
+    face?.kind === "PixiFace" && face.type === "avatar"
+      ? (face.colorRole ?? "background")
+      : "background";
 
   const talkingShape = useMemo(
     () =>
@@ -55,6 +83,31 @@ export function FaceMouth({
         ? face.mouth
         : "Ellipse",
     [face],
+  );
+
+  const targetPose = useMemo(
+    () =>
+      resolveTargetPose(message?.emotion ?? "Neutral", {
+        extendedExpression,
+        expressivity: faceSettings.vizijSettings?.faceExpressivity ?? 1,
+        conversationState,
+        facsOverrides,
+      }),
+    [
+      message?.emotion,
+      extendedExpression,
+      faceSettings.vizijSettings?.faceExpressivity,
+      conversationState,
+      facsOverrides,
+    ],
+  );
+
+  const themeHex =
+    color_mapping[message?.color ?? "Light Blue"] ?? color_mapping["Light Blue"];
+  const resolvedBgHex = resolveAvatarBackgroundHex(
+    themeHex,
+    vectorStyle,
+    colorRole,
   );
 
   const graphicsRef = useRef<Graphics>(null);
@@ -73,6 +126,22 @@ export function FaceMouth({
 
   const drawMouth = useCallback(
     (graphics: Graphics) => {
+      if (vectorStyle) {
+        drawVectorMouth({
+          graphics,
+          style: vectorStyle,
+          pose: frozen ? targetPose : currentPoseRef.current,
+          scale,
+          talking,
+          talkingScale: talkingScaleRef.current,
+          talkingTime: talkingTimeRef.current,
+          bgColor: resolvedBgHex,
+          themeColor: themeHex,
+          colorRole,
+        });
+        return;
+      }
+
       graphics.clear();
       const talkingScale = talkingScaleRef.current;
       const talkingTime = talkingTimeRef.current;
@@ -155,11 +224,29 @@ export function FaceMouth({
       }
       graphics.stroke({ color: "black", width: 2 });
     },
-    [scale, talking, talkingShape],
+    [
+      vectorStyle,
+      frozen,
+      targetPose,
+      scale,
+      talking,
+      resolvedBgHex,
+      themeHex,
+      colorRole,
+      talkingShape,
+    ],
   );
 
   useTick((time) => {
     if (frozen) return;
+
+    const dtSeconds = Math.min(0.05, time.deltaMS / 1000);
+    currentPoseRef.current = stepFacePose(
+      currentPoseRef.current,
+      targetPose,
+      dtSeconds,
+      9.5,
+    );
 
     let targetScale: number;
     if (talking) {
