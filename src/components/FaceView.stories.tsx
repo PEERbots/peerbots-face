@@ -390,7 +390,7 @@ function VizijFacePlayground(args: PlaygroundArgs) {
             <button
               type="button"
               onClick={handleSpeak}
-              className="px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white font-medium transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded bg-teal-700 hover:bg-teal-600 text-white font-medium transition-colors cursor-pointer"
             >
               Speak (TTS + Visemes)
             </button>
