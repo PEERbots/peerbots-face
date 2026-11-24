@@ -1,10 +1,100 @@
 {
   "id": "peerbots-face",
   "version": "v1",
-  "title": "Peerbots Face Extensions",
-  "description": "Peerbots-specific face controls composed alongside vizij-face: single theme color, amplitude lip-sync fallback, and scene framing (zoom, offset, rotation).",
+  "title": "Peerbots Face",
+  "description": "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech amplitude, conversation state, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
   "scope": "face",
   "keys": [
+    {
+      "path": "peerbots/expression/neutral",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 1.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/expression/surprised",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/expression/happy",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/expression/sad",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/expression/concerned",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/expression/sleepy",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "expression" }
+    },
+    {
+      "path": "peerbots/gaze/x",
+      "kind": "input",
+      "value_type": "f32",
+      "min": -1.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "gaze" }
+    },
+    {
+      "path": "peerbots/gaze/y",
+      "kind": "input",
+      "value_type": "f32",
+      "min": -1.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "gaze" }
+    },
+    {
+      "path": "peerbots/gaze/weight",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "gaze" }
+    },
+    {
+      "path": "peerbots/blink",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "gaze" }
+    },
     {
       "path": "peerbots/color/r",
       "kind": "input",
@@ -40,6 +130,33 @@
       "max": 1.0,
       "default_value": { "f32": 0.0 },
       "meta": { "tier": "viseme" }
+    },
+    {
+      "path": "peerbots/conversation/speaking",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "conversation" }
+    },
+    {
+      "path": "peerbots/conversation/user_speaking",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "conversation" }
+    },
+    {
+      "path": "peerbots/conversation/thinking",
+      "kind": "input",
+      "value_type": "f32",
+      "min": 0.0,
+      "max": 1.0,
+      "default_value": { "f32": 0.0 },
+      "meta": { "tier": "conversation" }
     },
     {
       "path": "peerbots/scene/scale",

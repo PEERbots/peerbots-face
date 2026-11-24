@@ -42,22 +42,16 @@ function createFakeGraphics(): Graphics {
   } as unknown as Graphics;
 }
 
-describe("Peerbots Vizij Extension Profile (peerbots-face.v1.json)", () => {
+describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
   it("stays strictly in sync between the JSON asset and PEERBOTS_FACE_PROFILE constant", () => {
     expect(peerbotsProfileJson).toEqual(PEERBOTS_FACE_PROFILE);
     expect(peerbotsProfileJson.id).toBe("peerbots-face");
     expect(peerbotsProfileJson.version).toBe("v1");
     expect(peerbotsProfileJson.scope).toBe("face");
-    expect(peerbotsProfileJson.keys.map((k) => k.path)).toEqual([
-      PEERBOTS_PROFILE_KEYS.colorR,
-      PEERBOTS_PROFILE_KEYS.colorG,
-      PEERBOTS_PROFILE_KEYS.colorB,
-      PEERBOTS_PROFILE_KEYS.speechAmplitude,
-      PEERBOTS_PROFILE_KEYS.sceneScale,
-      PEERBOTS_PROFILE_KEYS.sceneOffsetX,
-      PEERBOTS_PROFILE_KEYS.sceneOffsetY,
-      PEERBOTS_PROFILE_KEYS.sceneRotation,
-    ]);
+    expect(peerbotsProfileJson.keys.map((k) => k.path)).toEqual(
+      Object.values(PEERBOTS_PROFILE_KEYS),
+    );
+    expect(peerbotsProfileJson.keys).toHaveLength(21);
   });
 
   it("inspects standard vizij-face + peerbots-face GLB paths and reports full auto-connection", () => {

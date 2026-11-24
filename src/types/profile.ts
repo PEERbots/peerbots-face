@@ -27,10 +27,23 @@ export interface VizijProfileDefinition {
 }
 
 export const PEERBOTS_PROFILE_KEYS = {
+  expressionNeutral: "peerbots/expression/neutral",
+  expressionSurprised: "peerbots/expression/surprised",
+  expressionHappy: "peerbots/expression/happy",
+  expressionSad: "peerbots/expression/sad",
+  expressionConcerned: "peerbots/expression/concerned",
+  expressionSleepy: "peerbots/expression/sleepy",
+  gazeX: "peerbots/gaze/x",
+  gazeY: "peerbots/gaze/y",
+  gazeWeight: "peerbots/gaze/weight",
+  blink: "peerbots/blink",
   colorR: "peerbots/color/r",
   colorG: "peerbots/color/g",
   colorB: "peerbots/color/b",
   speechAmplitude: "peerbots/speech/amplitude",
+  conversationSpeaking: "peerbots/conversation/speaking",
+  conversationUserSpeaking: "peerbots/conversation/user_speaking",
+  conversationThinking: "peerbots/conversation/thinking",
   sceneScale: "peerbots/scene/scale",
   sceneOffsetX: "peerbots/scene/offset/x",
   sceneOffsetY: "peerbots/scene/offset/y",
@@ -40,11 +53,101 @@ export const PEERBOTS_PROFILE_KEYS = {
 export const PEERBOTS_FACE_PROFILE: VizijProfileDefinition = {
   id: "peerbots-face",
   version: "v1",
-  title: "Peerbots Face Extensions",
+  title: "Peerbots Face",
   description:
-    "Peerbots-specific face controls composed alongside vizij-face: single theme color, amplitude lip-sync fallback, and scene framing (zoom, offset, rotation).",
+    "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech amplitude, conversation state, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
   scope: "face",
   keys: [
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionNeutral,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 1.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionSurprised,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionHappy,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionSad,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionConcerned,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.expressionSleepy,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "expression" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.gazeX,
+      kind: "input",
+      value_type: "f32",
+      min: -1.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "gaze" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.gazeY,
+      kind: "input",
+      value_type: "f32",
+      min: -1.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "gaze" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.gazeWeight,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "gaze" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.blink,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "gaze" },
+    },
     {
       path: PEERBOTS_PROFILE_KEYS.colorR,
       kind: "input",
@@ -80,6 +183,33 @@ export const PEERBOTS_FACE_PROFILE: VizijProfileDefinition = {
       max: 1.0,
       default_value: { f32: 0.0 },
       meta: { tier: "viseme" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.conversationSpeaking,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "conversation" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.conversationUserSpeaking,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "conversation" },
+    },
+    {
+      path: PEERBOTS_PROFILE_KEYS.conversationThinking,
+      kind: "input",
+      value_type: "f32",
+      min: 0.0,
+      max: 1.0,
+      default_value: { f32: 0.0 },
+      meta: { tier: "conversation" },
     },
     {
       path: PEERBOTS_PROFILE_KEYS.sceneScale,
@@ -308,6 +438,9 @@ export function inspectGlbProfileConnection(
     "concerned",
     "sleepy",
   ];
+  const peerbotsEmotionsConnected = coreExpressions.filter((e) =>
+    normalized.has(`peerbots/expression/${e}`),
+  ).length;
   const standardEmotionsConnected = coreExpressions.filter((e) =>
     normalized.has(VIZIJ_STANDARD_KEYS.expression(e)),
   ).length;
@@ -338,14 +471,19 @@ export function inspectGlbProfileConnection(
     normalized.has("background/color/b");
 
   const hasStandardGaze =
+    normalized.has(PEERBOTS_PROFILE_KEYS.gazeX) ||
     normalized.has(VIZIJ_STANDARD_KEYS.gazeTargetX) ||
     normalized.has(VIZIJ_STANDARD_KEYS.leftEyeX);
 
   const hasStandardBlink =
+    normalized.has(PEERBOTS_PROFILE_KEYS.blink) ||
     normalized.has(VIZIJ_STANDARD_KEYS.blink) ||
     normalized.has(VIZIJ_STANDARD_KEYS.leftTopLid);
 
   const hasConversation =
+    normalized.has(PEERBOTS_PROFILE_KEYS.conversationSpeaking) ||
+    normalized.has(PEERBOTS_PROFILE_KEYS.conversationUserSpeaking) ||
+    normalized.has(PEERBOTS_PROFILE_KEYS.conversationThinking) ||
     normalized.has(VIZIJ_STANDARD_KEYS.conversationSpeaking) ||
     normalized.has(VIZIJ_STANDARD_KEYS.conversationUserSpeaking) ||
     normalized.has(VIZIJ_STANDARD_KEYS.conversationThinking);
@@ -360,13 +498,17 @@ export function inspectGlbProfileConnection(
       normalized.has("scene/translation/y"));
   const hasRotation = normalized.has(PEERBOTS_PROFILE_KEYS.sceneRotation);
 
+  const modernEmotionsConnected = Math.max(
+    peerbotsEmotionsConnected,
+    standardEmotionsConnected,
+  );
   const usesLegacyRigPaths =
-    standardEmotionsConnected === 0 &&
+    modernEmotionsConnected === 0 &&
     (legacyEmotionsConnected > 0 || hasLegacyColor || legacyVisemesConnected > 0);
 
   const emotionsConnected =
-    standardEmotionsConnected > 0
-      ? standardEmotionsConnected
+    modernEmotionsConnected > 0
+      ? modernEmotionsConnected
       : legacyEmotionsConnected;
   const visemesConnected =
     standardVisemesConnected > 0
@@ -427,7 +569,7 @@ function clampSigned(value: number): number {
 }
 
 /**
- * Projects `@peerbots/face` store state into the canonical `vizij-face` + `peerbots-face`
+ * Projects `@peerbots/face` store state into the canonical `peerbots-face` + `vizij-face`
  * key/value map consumed by both PixiJS and Vizij 1.0 renderers.
  */
 export function buildProfileControlValues(
@@ -453,7 +595,7 @@ export function buildProfileControlValues(
 
   const values: Record<string, number> = {};
 
-  // Core + active standard expression weights
+  // Core Peerbots + Vizij standard expression weights
   const coreExpressions: VizijStandardExpression[] = [
     "neutral",
     "surprised",
@@ -463,18 +605,25 @@ export function buildProfileControlValues(
     "sleepy",
   ];
   for (const expr of coreExpressions) {
-    values[VIZIJ_STANDARD_KEYS.expression(expr)] =
-      expr === activeExpression ? expressivity : 0;
+    const weight = expr === activeExpression ? expressivity : 0;
+    values[`peerbots/expression/${expr}`] = weight;
+    values[VIZIJ_STANDARD_KEYS.expression(expr)] = weight;
   }
   if (!coreExpressions.includes(activeExpression)) {
     values[VIZIJ_STANDARD_KEYS.expression(activeExpression)] = expressivity;
   }
 
-  // Gaze target ([0, 1] frame coordinates) + weight
+  // Gaze target ([0, 1] Vizij frame + [-1, 1] Peerbots signed) + weight
   const gx = clampSigned(gaze.x);
   const gy = clampSigned(gaze.y);
   const implicitWeight = Math.abs(gx) > 0.001 || Math.abs(gy) > 0.001 ? 1 : 0;
   const gazeWeight = clamp01(gaze.weight ?? implicitWeight);
+  const clampedBlink = clamp01(blinkLevel);
+
+  values[PEERBOTS_PROFILE_KEYS.gazeX] = gx;
+  values[PEERBOTS_PROFILE_KEYS.gazeY] = gy;
+  values[PEERBOTS_PROFILE_KEYS.gazeWeight] = gazeWeight;
+  values[PEERBOTS_PROFILE_KEYS.blink] = clampedBlink;
 
   values[VIZIJ_STANDARD_KEYS.gazeTargetX] = (gx + 1) / 2;
   values[VIZIJ_STANDARD_KEYS.gazeTargetY] = (gy + 1) / 2;
@@ -483,16 +632,21 @@ export function buildProfileControlValues(
   values[VIZIJ_STANDARD_KEYS.leftEyeY] = -gy;
   values[VIZIJ_STANDARD_KEYS.rightEyeX] = gx;
   values[VIZIJ_STANDARD_KEYS.rightEyeY] = -gy;
-  values[VIZIJ_STANDARD_KEYS.blink] = clamp01(blinkLevel);
+  values[VIZIJ_STANDARD_KEYS.blink] = clampedBlink;
   values[VIZIJ_STANDARD_KEYS.lipsyncGain] = Math.max(0, settings.amplitudeGain ?? 1);
 
-  // Conversation state
+  // Conversation state (both Peerbots + Vizij standard keys)
   const effectiveSpeaking = isSpeaking || conversationState === "speaking";
-  values[VIZIJ_STANDARD_KEYS.conversationSpeaking] = effectiveSpeaking ? 1 : 0;
-  values[VIZIJ_STANDARD_KEYS.conversationUserSpeaking] =
-    conversationState === "listening" ? 1 : 0;
-  values[VIZIJ_STANDARD_KEYS.conversationThinking] =
-    conversationState === "thinking" ? 1 : 0;
+  const speakingVal = effectiveSpeaking ? 1 : 0;
+  const listeningVal = conversationState === "listening" ? 1 : 0;
+  const thinkingVal = conversationState === "thinking" ? 1 : 0;
+
+  values[PEERBOTS_PROFILE_KEYS.conversationSpeaking] = speakingVal;
+  values[PEERBOTS_PROFILE_KEYS.conversationUserSpeaking] = listeningVal;
+  values[PEERBOTS_PROFILE_KEYS.conversationThinking] = thinkingVal;
+  values[VIZIJ_STANDARD_KEYS.conversationSpeaking] = speakingVal;
+  values[VIZIJ_STANDARD_KEYS.conversationUserSpeaking] = listeningVal;
+  values[VIZIJ_STANDARD_KEYS.conversationThinking] = thinkingVal;
 
   // Optional FACS muscle overrides
   if (facsOverrides) {
@@ -503,7 +657,7 @@ export function buildProfileControlValues(
     }
   }
 
-  // Peerbots extension keys: single color, amplitude, scene framing
+  // Peerbots appearance, amplitude, and scene framing
   const rgb = hexToRgb(color_mapping[message.color] ?? color_mapping["Light Blue"]) ?? {
     r: 171,
     g: 227,
