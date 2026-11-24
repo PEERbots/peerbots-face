@@ -43,11 +43,10 @@ export function FaceAudioPrompt({
       data-testid="face-audio-prompt"
     >
       <Button
-        variant="solid"
-        color="darkblue"
+        variant="primary"
         size="sm"
         onClick={handleEnableAudio}
-        className="pbf:shadow-lg pbf:px-4 pbf:py-2 pbf:flex pbf:items-center pbf:gap-2 pbf:rounded-full pbf:cursor-pointer"
+        className="pbf:shadow-lg pbf:border pbf:border-white/20 pbf:backdrop-blur-sm pbf:px-4 pbf:py-2 pbf:flex pbf:items-center pbf:gap-2 pbf:rounded-full pbf:cursor-pointer pbf:hover:scale-105 pbf:transition-transform"
         aria-label={uiLabels.tapToEnableSound}
       >
         <Icon name="play" size="sm" className="pbf:w-3.5 pbf:h-3.5" />

@@ -5,8 +5,9 @@ import {
   SettingsPanel,
   Separator,
   Switch,
+  TabRadio,
 } from "@peerbots/core";
-import type { SpeechQueueMode } from "../types/face";
+import type { CaptionStyle, SpeechQueueMode } from "../types/face";
 import { resolveFaceUiLabels, type FaceUiLabels } from "../types/labels";
 import { useFaceStore } from "../store/FaceStoreContext";
 import { FieldGroup } from "./FieldGroup";
@@ -116,6 +117,29 @@ export function FaceBehaviorControls({
 
           {faceSettings.captions?.enabled && (
             <div className="pbf:flex pbf:flex-col pbf:gap-4 pbf:mt-1">
+              <Field
+                label={uiLabels.captionStyle}
+                labelPlacement="left"
+                className="pbf:flex-row pbf:items-center pbf:justify-between"
+              >
+                <TabRadio
+                  aria-label={uiLabels.captionStyle}
+                  options={[
+                    { value: "pill", label: uiLabels.captionStylePill },
+                    { value: "outline", label: uiLabels.captionStyleOutline },
+                  ]}
+                  value={faceSettings.captions?.style ?? "pill"}
+                  onChange={(val) => {
+                    setFaceSettings({
+                      captions: {
+                        ...faceSettings.captions,
+                        style: (val as CaptionStyle) || "pill",
+                      },
+                    });
+                  }}
+                />
+              </Field>
+
               <FieldGroup label={uiLabels.fontSize}>
                 <SliderWithNumberField
                   aria-label={uiLabels.fontSize}

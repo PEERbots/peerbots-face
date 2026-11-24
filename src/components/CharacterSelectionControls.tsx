@@ -61,8 +61,7 @@ export function CharacterSelectionControls({
           <>
             <div className="pbf:flex">
               <Button
-                variant="solid"
-                color="darkblue"
+                variant="primary"
                 size="sm"
                 onClick={() => {
                   void unlockAudio();

@@ -38,6 +38,9 @@ export interface FaceUiLabels {
   interruptSpeech: string;
   queueSpeech: string;
   captions: string;
+  captionStyle: string;
+  captionStylePill: string;
+  captionStyleOutline: string;
   fontSize: string;
   verticalPosition: string;
   voiceSelectorLanguage: string;
@@ -91,6 +94,9 @@ export const DEFAULT_FACE_UI_LABELS: FaceUiLabels = {
   interruptSpeech: "Interrupt current speech",
   queueSpeech: "Queue after current speech",
   captions: "Captions",
+  captionStyle: "Caption Style",
+  captionStylePill: "Dark Pill",
+  captionStyleOutline: "Text Outline",
   fontSize: "Caption Font Size",
   verticalPosition: "Vertical Position",
   voiceSelectorLanguage: "Language",

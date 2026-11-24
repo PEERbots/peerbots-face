@@ -285,5 +285,55 @@ describe("FaceView, FaceAudioPrompt, FaceSettingsPanel & WCAG 2.1 AA Accessibili
     const graphAxe = await axe(container);
     expect(graphAxe).toHaveNoViolations();
   });
+
+  it("switches FaceCaption between Dark Pill and Text Outline styles via FaceSettingsPanel", async () => {
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialSettings: {
+        captions: {
+          enabled: true,
+          fontSize: 28,
+          offset: { x: 0, y: 0 },
+          style: "pill",
+        },
+      },
+      initialMessage: {
+        title: "Hello",
+        speech: "Caption style test",
+        color: "Light Blue",
+        emotion: "Happy",
+      },
+    });
+
+    const { container } = render(
+      <PeerbotsI18nProvider>
+        <FaceStoreProvider store={store}>
+          <FaceView />
+          <FaceSettingsPanel />
+        </FaceStoreProvider>
+      </PeerbotsI18nProvider>,
+    );
+
+    const caption = screen.getByTestId("face-caption");
+    expect(caption).toHaveAttribute("data-caption-style", "pill");
+    expect(caption.style.backgroundColor).toContain("rgba(15, 23, 42, 0.75)");
+
+    fireEvent.click(screen.getByRole("button", { name: /Text Outline/i }));
+    expect(store.getState().faceSettings.captions.style).toBe("outline");
+    expect(screen.getByTestId("face-caption")).toHaveAttribute(
+      "data-caption-style",
+      "outline",
+    );
+    expect(screen.getByTestId("face-caption").style.textShadow).toContain(
+      "2px 2px 2px",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Dark Pill/i }));
+    expect(store.getState().faceSettings.captions.style).toBe("pill");
+
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
 });
+
 
