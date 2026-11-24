@@ -91,11 +91,15 @@ function traceEyeContour(
   isLeft: boolean,
   superellipsePower: number = 2,
   bottomTaper: number = 0,
+  sadDroop: number = 0,
 ): { visibleTop: number; visibleBottom: number } {
-  const segments = 48;
+  const segments = 56;
   const sign = isLeft ? 1 : -1;
   const tiltSlope = Math.tan(lidTilt * 0.48 * sign);
   const exp = 2 / superellipsePower;
+
+  let minY = Infinity;
+  let maxY = -Infinity;
 
   for (let i = 0; i <= segments; i++) {
     const theta = (i / segments) * Math.PI * 2;
@@ -105,26 +109,53 @@ function traceEyeContour(
     let lx = rx * Math.sign(cosT) * Math.pow(Math.abs(cosT), exp);
     let ly = ry * Math.sign(sinT) * Math.pow(Math.abs(sinT), exp);
 
-    // Classic Hugo Surprised egg/teardrop taper (narrower toward bottom)
-    if (bottomTaper > 0.005 && sinT > 0) {
-      lx *= 1 - bottomTaper * sinT * 0.65;
+    // Smooth C1-continuous teardrop/egg taper (classic Hugo Surprised eye — zero equator kink)
+    if (bottomTaper > 0.005) {
+      const tDown = (sinT + 1) * 0.5; // 0 at top, 1 at bottom
+      lx *= 1 + bottomTaper * (0.1 - 0.68 * tDown * tDown);
+      ly -= bottomTaper * ry * 0.08 * (1 - tDown);
     }
 
-    // Upper eyelid line (flat for Concerned, angled for Sad)
-    const topCutY =
-      topLid > 0.005 ? -ry + ry * 1.95 * topLid + tiltSlope * lx : -ry * 1.1;
+    // Smooth organic melting/drooping almond (classic Hugo Sad eye — tall inner-top, drooping outer-bottom)
+    if (sadDroop > 0.005) {
+      // u = +1 on inner (nose) side, -1 on outer side
+      const u = cosT * sign;
+      const outerWeight = Math.pow((1 - u) * 0.5, 1.55);
+      const topWeight = Math.max(0, -sinT);
+      const botWeight = Math.max(0, sinT);
+      // Outer upper contour droops gently downward; inner peak stays tall and rounded
+      ly += sadDroop * ry * (1.05 * outerWeight * topWeight - 0.14 * Math.max(0, u) * topWeight);
+      // Shift inner-top slightly toward nose and widen outer-bottom lobe softly
+      lx += sadDroop * rx * sign * (0.2 * topWeight - 0.14 * outerWeight * botWeight);
+    }
 
-    // Lower eyelid upward crescent arch (classic Happy rainbow-bean eye)
     const normX = Math.max(-1, Math.min(1, lx / Math.max(1, rx)));
-    const archFactor = Math.cos(normX * (Math.PI / 2));
+
+    // Upper eyelid curve (gently bowed + slight outer lift for classic Concerned squint)
+    const concernedBow =
+      topLid > 0.005
+        ? -ry * 0.09 * Math.cos(normX * Math.PI) - ry * 0.06 * Math.pow(Math.abs(normX), 2.2)
+        : 0;
+    const topCutY =
+      topLid > 0.005
+        ? -ry + ry * 1.68 * topLid + tiltSlope * lx + concernedBow
+        : -ry * 1.2;
+
+    // Lower eyelid upward rounded arch (classic Happy — softly rounded bottom corners)
+    const archFactor = Math.pow(Math.max(0, Math.cos(normX * Math.PI * 0.45)), 1.65);
     const botCutY =
-      bottomLid > 0.005 ? ry - bottomLid * ry * 1.38 * archFactor : ry * 1.1;
+      bottomLid > 0.005
+        ? ry - bottomLid * ry * 1.32 * archFactor
+        : ry * 1.2;
 
     if (topCutY >= botCutY) {
       ly = (topCutY + botCutY) * 0.5;
     } else {
       ly = Math.max(topCutY, Math.min(botCutY, ly));
     }
+
+    if (ly < minY) minY = ly;
+    if (ly > maxY) maxY = ly;
 
     const px = cx + lx;
     const py = cy + ly;
@@ -136,9 +167,10 @@ function traceEyeContour(
   }
   g.closePath();
 
-  const visibleTop = topLid > 0.005 ? -ry + ry * 1.95 * topLid : -ry;
-  const visibleBottom = bottomLid > 0.005 ? ry - bottomLid * ry * 1.38 : ry;
-  return { visibleTop, visibleBottom };
+  return {
+    visibleTop: Number.isFinite(minY) ? minY : -ry,
+    visibleBottom: Number.isFinite(maxY) ? maxY : ry,
+  };
 }
 
 function drawCurvedBrow(
@@ -212,32 +244,33 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     const cy = gy;
 
     if (style === "hugo") {
-      // Faithful to classic Hugo: 1.1 left-to-right eye scale ratio, pure black eyes,
-      // delicate thin eyebrows at y=-180, soft oval cheeks at y=+150, twin white highlights.
+      // Faithful to classic Hugo PNGs: 98px base radius (196px diameter), 1.1 L/R scale ratio,
+      // pure black eyes, delicate thin eyebrows at y=-180, warm coral-pink cheeks at y=+150, twin white highlights.
       const asym = isLeft ? 1.1 : 1.0;
-      const rx = 115 * pose.eyeWidth * breathe * asym * scale;
-      const ry = Math.max(8 * scale, 115 * pose.eyeHeight * breathe * asym * blink * scale);
-
-      if (showCheeks && pose.cheekAlpha > 0.02) {
-        g.ellipse(cx, cy + 150 * scale, 44 * breathe * scale, 21 * breathe * scale);
-        g.fill({ color: "#F48FB1", alpha: pose.cheekAlpha * 0.72 });
-      }
+      const rx = 98 * pose.eyeWidth * breathe * asym * scale;
+      const ry = Math.max(8 * scale, 98 * pose.eyeHeight * breathe * asym * blink * scale);
 
       if (pose.sleepyArc > 0.65) {
-        // Classic Hugo thin downward-curving crescent sleep eye
-        const arcW = rx * 0.92;
-        const arcY = cy + 28 * scale;
-        const depth = 46 * scale * pose.sleepyArc;
-        g.moveTo(cx - arcW, arcY - depth * 0.35);
-        g.quadraticCurveTo(cx, arcY + depth, cx + arcW, arcY - depth * 0.35);
-        g.quadraticCurveTo(
-          cx,
-          arcY + depth * 0.68,
-          cx - arcW,
-          arcY - depth * 0.35,
-        );
+        // Classic Hugo thick glossy downward-curving crescent sleep eye with inner white specular streak
+        const arcW = 114 * breathe * asym * scale;
+        const arcY = cy + 12 * scale;
+        const outerDepth = 64 * scale * pose.sleepyArc;
+        const innerDepth = 20 * scale * pose.sleepyArc;
+        g.moveTo(cx - arcW, arcY - outerDepth * 0.4);
+        g.quadraticCurveTo(cx, arcY + outerDepth, cx + arcW, arcY - outerDepth * 0.4);
+        g.quadraticCurveTo(cx, arcY + innerDepth, cx - arcW, arcY - outerDepth * 0.4);
         g.closePath();
         g.fill({ color: ink });
+
+        // Inner white specular highlight streak nestled inside the black crescent
+        const hlW = arcW * 0.66;
+        const hlOuter = outerDepth * 0.72;
+        const hlInner = innerDepth * 1.48;
+        g.moveTo(cx - hlW, arcY - outerDepth * 0.14);
+        g.quadraticCurveTo(cx, arcY + hlOuter, cx + hlW, arcY - outerDepth * 0.14);
+        g.quadraticCurveTo(cx, arcY + hlInner, cx - hlW, arcY - outerDepth * 0.14);
+        g.closePath();
+        g.fill({ color: "#FFFFFF" });
       } else {
         const { visibleTop, visibleBottom } = traceEyeContour(
           g,
@@ -251,6 +284,7 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
           isLeft,
           2,
           pose.bottomTaper,
+          pose.sadDroop,
         );
         g.fill({ color: ink });
 
@@ -258,39 +292,53 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         const apertureMidY = (visibleTop + visibleBottom) * 0.5;
         if (blink > 0.25 && apertureH > 26 * scale) {
           const hlScale = Math.min(1, apertureH / (ry * 1.45));
-          const mainR = Math.min(rx * 0.3 * pose.pupilScale * hlScale, apertureH * 0.34);
+          const mainRx = Math.min(
+            rx * (0.36 - pose.sadDroop * 0.08) * pose.pupilScale * hlScale,
+            apertureH * 0.36,
+          );
+          const mainRy =
+            mainRx * (1 + pose.bottomTaper * 0.45 + pose.sadDroop * 0.2 - pose.topLid * 0.35);
+          const sadShiftX = pose.sadDroop * rx * (isLeft ? 0.04 : -0.22);
+          const sadShiftY = pose.sadDroop * ry * (isLeft ? 0.02 : 0.16);
           g.ellipse(
-            cx + rx * 0.32 + gx * 0.12,
-            cy + apertureMidY - apertureH * 0.14 + gy * 0.08,
-            mainR,
-            mainR * (1 + pose.bottomTaper * 0.35),
+            cx + rx * 0.3 + sadShiftX + gx * 0.12,
+            cy + apertureMidY - apertureH * 0.15 + sadShiftY + gy * 0.08,
+            mainRx,
+            mainRy,
           );
           g.fill({ color: "#FFFFFF" });
 
           if (apertureH > 46 * scale) {
-            const subR = Math.min(rx * 0.145 * hlScale, apertureH * 0.18);
+            const subRx = Math.min(rx * 0.165 * hlScale, apertureH * 0.2);
+            const subRy = subRx * (1 + pose.bottomTaper * 0.4 - pose.topLid * 0.25);
             g.ellipse(
               cx - rx * 0.32 + gx * 0.08,
-              cy + apertureMidY + apertureH * 0.22 + gy * 0.06,
-              subR,
-              subR * (1 + pose.bottomTaper * 0.35),
+              cy + apertureMidY + apertureH * 0.24 + gy * 0.06,
+              subRx,
+              subRy,
             );
             g.fill({ color: "#FFFFFF" });
           }
         }
       }
 
-      if (showEyebrows) {
+      // Draw warm coral-pink cheeks AFTER eyes so Surprised teardrop touches cleanly behind the cheek
+      if (showCheeks && pose.cheekAlpha > 0.02) {
+        g.ellipse(cx, cy + 150 * scale, 41 * breathe * scale, 20 * breathe * scale);
+        g.fill({ color: "#FFA39E", alpha: Math.min(1, pose.cheekAlpha) });
+      }
+
+      if (showEyebrows && pose.bottomTaper < 0.32) {
         // Classic Hugo thin delicate arched eyebrow at y = -180 * scale
         drawCurvedBrow(
           g,
           cx,
-          cy - 180 * scale + pose.browY * 32 * scale,
-          38 * breathe * scale,
-          0.95 + pose.browArch * 0.5,
-          pose.browTilt * 0.5,
+          cy - 180 * scale + pose.browY * 24 * scale,
+          37 * breathe * scale,
+          1.15 + pose.browArch * 0.4,
+          pose.browTilt * 0.35,
           isLeft,
-          Math.max(1.5, 3.5 * scale),
+          Math.max(1.5, 3.2 * scale),
           ink,
         );
       }

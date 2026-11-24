@@ -12,7 +12,9 @@ export interface FacePose {
   lidTilt: number;
   /** Bottom-taper factor for Hugo's classic Surprised teardrop/egg eye (0 = oval, >0 = narrower bottom). */
   bottomTaper: number;
-  /** Thin smiling-crescent sleep eye blend (0 = open/normal, 1 = classic thin curved sleepy arc). */
+  /** Smooth organic melting/drooping almond deformation for classic Hugo Sad eye (0 = none, 1 = full). */
+  sadDroop: number;
+  /** Thick glossy curved crescent sleep eye blend (0 = open/normal, 1 = classic curved sleepy crescent). */
   sleepyArc: number;
   browY: number;
   browTilt: number;
@@ -28,85 +30,91 @@ export const NEUTRAL_POSE: FacePose = {
   bottomLid: 0.0,
   lidTilt: 0.0,
   bottomTaper: 0.0,
+  sadDroop: 0.0,
   sleepyArc: 0.0,
   browY: 0.0,
   browTilt: 0.0,
   browArch: 0.15,
   pupilScale: 1.0,
-  cheekAlpha: 0.55,
+  cheekAlpha: 0.85,
 };
 
 export const EMOTION_POSES: Record<PeerbotsEmotion, FacePose> = {
   Neutral: { ...NEUTRAL_POSE },
   Happy: {
-    eyeHeight: 0.88,
-    eyeWidth: 1.08,
+    eyeHeight: 0.92,
+    eyeWidth: 1.14,
     topLid: 0.0,
-    bottomLid: 0.56,
+    bottomLid: 0.44,
     lidTilt: 0.0,
     bottomTaper: 0.0,
+    sadDroop: 0.0,
     sleepyArc: 0.0,
-    browY: -0.18,
-    browTilt: -0.06,
-    browArch: 0.35,
-    pupilScale: 1.05,
-    cheekAlpha: 0.85,
+    browY: -0.08,
+    browTilt: 0.0,
+    browArch: 0.22,
+    pupilScale: 1.04,
+    cheekAlpha: 0.9,
   },
   Sad: {
-    eyeHeight: 0.94,
-    eyeWidth: 1.02,
-    topLid: 0.42,
+    eyeHeight: 1.12,
+    eyeWidth: 1.18,
+    topLid: 0.0,
     bottomLid: 0.0,
-    lidTilt: -0.58,
+    lidTilt: -0.15,
     bottomTaper: 0.0,
+    sadDroop: 1.0,
     sleepyArc: 0.0,
-    browY: 0.04,
-    browTilt: -0.45,
-    browArch: 0.1,
-    pupilScale: 0.95,
-    cheekAlpha: 0.3,
+    browY: 0.02,
+    browTilt: -0.1,
+    browArch: 0.15,
+    pupilScale: 1.02,
+    cheekAlpha: 0.82,
   },
   Surprised: {
-    eyeHeight: 1.38,
-    eyeWidth: 1.06,
+    eyeHeight: 1.62,
+    eyeWidth: 1.22,
     topLid: 0.0,
     bottomLid: 0.0,
     lidTilt: 0.0,
-    bottomTaper: 0.32,
+    bottomTaper: 0.46,
+    sadDroop: 0.0,
     sleepyArc: 0.0,
-    browY: -0.45,
-    browTilt: 0.04,
-    browArch: 0.5,
-    pupilScale: 1.05,
-    cheekAlpha: 0.4,
+    browY: -0.55,
+    browTilt: 0.0,
+    browArch: 0.25,
+    pupilScale: 1.14,
+    cheekAlpha: 0.85,
   },
   Concerned: {
-    eyeHeight: 0.82,
-    eyeWidth: 1.12,
-    topLid: 0.48,
+    eyeHeight: 0.9,
+    eyeWidth: 1.44,
+    topLid: 0.42,
     bottomLid: 0.0,
     lidTilt: 0.0,
     bottomTaper: 0.0,
+    sadDroop: 0.0,
     sleepyArc: 0.0,
-    browY: 0.16,
-    browTilt: 0.28,
-    browArch: -0.12,
-    pupilScale: 0.92,
-    cheekAlpha: 0.28,
+    browY: 0.02,
+    browTilt: 0.05,
+    browArch: 0.12,
+    pupilScale: 0.94,
+    cheekAlpha: 0.82,
   },
   Sleepy: {
-    eyeHeight: 0.34,
-    eyeWidth: 1.06,
-    topLid: 0.74,
+    eyeHeight: 0.36,
+    eyeWidth: 1.15,
+    topLid: 0.72,
     bottomLid: 0.08,
     lidTilt: 0.0,
     bottomTaper: 0.0,
+    sadDroop: 0.0,
     sleepyArc: 1.0,
-    browY: 0.2,
-    browTilt: -0.12,
-    browArch: 0.05,
+    browY: 0.06,
+    browTilt: 0.0,
+    browArch: 0.12,
     pupilScale: 0.85,
-    cheekAlpha: 0.4,
+    cheekAlpha: 0.82,
   },
 };
 
@@ -216,6 +224,7 @@ export function resolveTargetPose(
     bottomLid: lerp(NEUTRAL_POSE.bottomLid, base.bottomLid, exp),
     lidTilt: lerp(NEUTRAL_POSE.lidTilt, base.lidTilt, exp),
     bottomTaper: lerp(NEUTRAL_POSE.bottomTaper, base.bottomTaper, exp),
+    sadDroop: lerp(NEUTRAL_POSE.sadDroop, base.sadDroop, exp),
     sleepyArc: lerp(NEUTRAL_POSE.sleepyArc, base.sleepyArc, exp),
     browY: lerp(NEUTRAL_POSE.browY, base.browY, exp),
     browTilt: lerp(NEUTRAL_POSE.browTilt, base.browTilt, exp),
@@ -245,7 +254,7 @@ export function resolveTargetPose(
 
     pose.browY = clamp(pose.browY - browInnerUp * 0.4 + browDown * 0.4, -0.7, 0.6);
     pose.browTilt = clamp(pose.browTilt - browInnerUp * 0.35 + browDown * 0.45, -0.8, 0.8);
-    pose.eyeHeight = clamp(pose.eyeHeight + eyeWide * 0.25 - eyeSquint * 0.2, 0.1, 1.5);
+    pose.eyeHeight = clamp(pose.eyeHeight + eyeWide * 0.25 - eyeSquint * 0.2, 0.1, 1.7);
     pose.bottomLid = clamp(pose.bottomLid + eyeSquint * 0.35 + cheekRaise * 0.3, 0, 0.9);
     pose.cheekAlpha = clamp(pose.cheekAlpha + cheekRaise * 0.45, 0, 1);
   }
@@ -270,6 +279,7 @@ export function stepFacePose(
     bottomLid: lerp(current.bottomLid, target.bottomLid, alpha),
     lidTilt: lerp(current.lidTilt, target.lidTilt, alpha),
     bottomTaper: lerp(current.bottomTaper, target.bottomTaper, alpha),
+    sadDroop: lerp(current.sadDroop, target.sadDroop, alpha),
     sleepyArc: lerp(current.sleepyArc, target.sleepyArc, alpha),
     browY: lerp(current.browY, target.browY, alpha),
     browTilt: lerp(current.browTilt, target.browTilt, alpha),
