@@ -79,39 +79,65 @@ export function resolveVectorInkHex(
   return "#111827";
 }
 
-function drawEyelidOverlay(
+/**
+ * Traces a true parametric eye silhouette (superellipse deformed by upper/lower
+ * eyelids and lid tilt) with 100% transparent exterior — no opaque background
+ * overlays that could clash with FaceBackground's radial glow.
+ */
+function traceEyeContour(
   g: Graphics,
   cx: number,
   cy: number,
   rx: number,
   ry: number,
-  bgColor: string,
   topLid: number,
   bottomLid: number,
   lidTilt: number,
   isLeft: boolean,
-): void {
+  superellipsePower: number = 2,
+): { visibleTop: number; visibleBottom: number } {
+  const segments = 48;
   const sign = isLeft ? 1 : -1;
-  const tilt = lidTilt * 0.42 * sign;
+  const tiltSlope = Math.tan(lidTilt * 0.42 * sign);
+  const exp = 2 / superellipsePower;
 
-  if (topLid > 0.01) {
-    const padX = rx * 1.45;
-    const topY = cy - ry * 1.5;
-    const cutY = cy - ry + ry * 2 * topLid;
-    const dy = Math.tan(tilt) * padX;
-    g.moveTo(cx - padX, topY);
-    g.lineTo(cx + padX, topY);
-    g.lineTo(cx + padX, cutY + dy);
-    g.lineTo(cx - padX, cutY - dy);
-    g.closePath();
-    g.fill({ color: bgColor });
-  }
+  for (let i = 0; i <= segments; i++) {
+    const theta = (i / segments) * Math.PI * 2;
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
 
-  if (bottomLid > 0.01) {
-    const lift = ry * 1.45 * bottomLid;
-    g.ellipse(cx, cy + ry * 1.4 - lift, rx * 1.32, ry * 0.92);
-    g.fill({ color: bgColor });
+    const lx = rx * Math.sign(cosT) * Math.pow(Math.abs(cosT), exp);
+    let ly = ry * Math.sign(sinT) * Math.pow(Math.abs(sinT), exp);
+
+    // Upper eyelid line (flat or angled for Sad / Concerned / Sleepy)
+    const topCutY =
+      topLid > 0.005 ? -ry + ry * 1.95 * topLid + tiltSlope * lx : -ry * 1.1;
+
+    // Lower eyelid upward crescent arch (for Happy cheek-squint)
+    const normX = Math.max(-1, Math.min(1, lx / Math.max(1, rx)));
+    const archFactor = Math.cos(normX * (Math.PI / 2));
+    const botCutY =
+      bottomLid > 0.005 ? ry - bottomLid * ry * 1.35 * archFactor : ry * 1.1;
+
+    if (topCutY >= botCutY) {
+      ly = (topCutY + botCutY) * 0.5;
+    } else {
+      ly = Math.max(topCutY, Math.min(botCutY, ly));
+    }
+
+    const px = cx + lx;
+    const py = cy + ly;
+    if (i === 0) {
+      g.moveTo(px, py);
+    } else {
+      g.lineTo(px, py);
+    }
   }
+  g.closePath();
+
+  const visibleTop = topLid > 0.005 ? -ry + ry * 1.95 * topLid : -ry;
+  const visibleBottom = bottomLid > 0.005 ? ry - bottomLid * ry * 1.35 : ry;
+  return { visibleTop, visibleBottom };
 }
 
 function drawCurvedBrow(
@@ -164,7 +190,6 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
     blink,
     gazeX,
     gazeY,
-    bgColor,
     themeColor,
     colorRole,
     showEyebrows,
@@ -196,38 +221,44 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         g.fill({ color: "#F472B6", alpha: pose.cheekAlpha * 0.55 });
       }
 
-      g.ellipse(cx, cy, rx, ry);
-      g.fill({ color: ink });
-
-      if (blink > 0.25) {
-        g.ellipse(
-          cx + rx * 0.28 + gx * 0.18,
-          cy - ry * 0.26 + gy * 0.16,
-          rx * 0.3 * pose.pupilScale,
-          ry * 0.3 * pose.pupilScale,
-        );
-        g.fill({ color: "#FFFFFF" });
-        g.ellipse(
-          cx - rx * 0.26 + gx * 0.14,
-          cy + ry * 0.28 + gy * 0.14,
-          rx * 0.14,
-          ry * 0.14,
-        );
-        g.fill({ color: "#FFFFFF" });
-      }
-
-      drawEyelidOverlay(
+      const { visibleTop, visibleBottom } = traceEyeContour(
         g,
         cx,
         cy,
         rx,
         ry,
-        bgColor,
         pose.topLid,
         pose.bottomLid,
         pose.lidTilt,
         isLeft,
+        2,
       );
+      g.fill({ color: ink });
+
+      const apertureH = Math.max(0, visibleBottom - visibleTop);
+      const apertureMidY = (visibleTop + visibleBottom) * 0.5;
+      if (blink > 0.25 && apertureH > 26 * scale) {
+        const hlScale = Math.min(1, apertureH / (ry * 1.4));
+        const mainR = Math.min(rx * 0.28 * pose.pupilScale * hlScale, apertureH * 0.34);
+        g.ellipse(
+          cx + rx * 0.28 + gx * 0.14,
+          cy + apertureMidY - apertureH * 0.14 + gy * 0.1,
+          mainR,
+          mainR * 0.92,
+        );
+        g.fill({ color: "#FFFFFF" });
+
+        if (apertureH > 48 * scale) {
+          const subR = Math.min(rx * 0.13 * hlScale, apertureH * 0.18);
+          g.ellipse(
+            cx - rx * 0.26 + gx * 0.1,
+            cy + apertureMidY + apertureH * 0.18 + gy * 0.08,
+            subR,
+            subR * 0.92,
+          );
+          g.fill({ color: "#FFFFFF" });
+        }
+      }
 
       if (showEyebrows) {
         drawCurvedBrow(
@@ -262,50 +293,58 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
       } else {
         const rx = 56 * pose.eyeWidth * breathe * scale;
         const ry = Math.max(8 * scale, 68 * pose.eyeHeight * breathe * blink * scale);
-        g.ellipse(cx, cy, rx, ry);
-        g.fill({ color: ink });
-
-        if (blink > 0.3) {
-          g.circle(cx + rx * 0.3, cy - ry * 0.28, 16 * scale);
-          g.fill({ color: "#FFFFFF" });
-        }
-
-        drawEyelidOverlay(
+        const { visibleTop, visibleBottom } = traceEyeContour(
           g,
           cx,
           cy,
           rx,
           ry,
-          bgColor,
           pose.topLid,
           0,
           pose.lidTilt,
           isLeft,
+          2,
         );
+        g.fill({ color: ink });
+
+        const apertureH = Math.max(0, visibleBottom - visibleTop);
+        const apertureMidY = (visibleTop + visibleBottom) * 0.5;
+        if (blink > 0.3 && apertureH > 22 * scale) {
+          g.circle(
+            cx + rx * 0.28,
+            cy + apertureMidY - apertureH * 0.14,
+            Math.min(16 * scale, apertureH * 0.25),
+          );
+          g.fill({ color: "#FFFFFF" });
+        }
       }
     } else if (style === "pebble") {
-      const w = 165 * pose.eyeWidth * breathe * scale;
-      const h = Math.max(16 * scale, 194 * pose.eyeHeight * breathe * blink * scale);
-      g.roundRect(cx - w / 2, cy - h / 2, w, h, Math.min(w, h) * 0.42);
-      g.fill({ color: ink });
-
-      if (blink > 0.25) {
-        g.circle(cx + w * 0.14 + gx * 0.15, cy - h * 0.16 + gy * 0.12, 22 * scale);
-        g.fill({ color: "#FFFFFF" });
-      }
-
-      drawEyelidOverlay(
+      const rx = 82 * pose.eyeWidth * breathe * scale;
+      const ry = Math.max(8 * scale, 97 * pose.eyeHeight * breathe * blink * scale);
+      const { visibleTop, visibleBottom } = traceEyeContour(
         g,
         cx,
         cy,
-        w / 2,
-        h / 2,
-        bgColor,
+        rx,
+        ry,
         pose.topLid,
         pose.bottomLid,
         pose.lidTilt,
         isLeft,
+        3.2,
       );
+      g.fill({ color: ink });
+
+      const apertureH = Math.max(0, visibleBottom - visibleTop);
+      const apertureMidY = (visibleTop + visibleBottom) * 0.5;
+      if (blink > 0.25 && apertureH > 26 * scale) {
+        g.circle(
+          cx + rx * 0.26 + gx * 0.12,
+          cy + apertureMidY - apertureH * 0.12 + gy * 0.08,
+          Math.min(22 * scale, apertureH * 0.24),
+        );
+        g.fill({ color: "#FFFFFF" });
+      }
 
       if (showEyebrows) {
         drawCurvedBrow(
@@ -321,71 +360,84 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         );
       }
     } else if (style === "dash") {
-      const w = 180 * pose.eyeWidth * breathe * scale;
-      const h = Math.max(16 * scale, 172 * pose.eyeHeight * breathe * blink * scale);
-      const radius = Math.min(w, h) * 0.35;
+      const rx = 90 * pose.eyeWidth * breathe * scale;
+      const ry = Math.max(8 * scale, 86 * pose.eyeHeight * breathe * blink * scale);
 
-      // Soft neon glow halo
-      g.roundRect(
-        cx - w / 2 - 14 * scale,
-        cy - h / 2 - 14 * scale,
-        w + 28 * scale,
-        h + 28 * scale,
-        radius + 14 * scale,
-      );
-      g.fill({ color: ink, alpha: 0.2 });
-
-      g.roundRect(cx - w / 2, cy - h / 2, w, h, radius);
-      g.fill({ color: ink });
-
-      drawEyelidOverlay(
+      // Soft neon glow halo (follows the exact deformed eye contour!)
+      traceEyeContour(
         g,
         cx,
         cy,
-        w / 2 + 16 * scale,
-        h / 2 + 16 * scale,
-        bgColor,
+        rx + 14 * scale,
+        ry + 14 * scale,
         pose.topLid,
         pose.bottomLid,
         pose.lidTilt,
         isLeft,
+        4.2,
       );
+      g.fill({ color: ink, alpha: 0.2 });
+
+      traceEyeContour(
+        g,
+        cx,
+        cy,
+        rx,
+        ry,
+        pose.topLid,
+        pose.bottomLid,
+        pose.lidTilt,
+        isLeft,
+        4.2,
+      );
+      g.fill({ color: ink });
     } else if (style === "orbit") {
       const eyeCenterX = side * eyeSep + gx * 0.45;
       const eyeCenterY = gy * 0.45;
       const rx = 112 * breathe * scale;
       const ry = Math.max(10 * scale, 112 * pose.eyeHeight * breathe * blink * scale);
 
-      // Sclera
-      g.ellipse(eyeCenterX, eyeCenterY, rx, ry);
-      g.fill({ color: "#FFFFFF" });
-      g.stroke({ width: Math.max(3, 12 * scale), color: ink });
-
-      // Iris + Pupil with parallax gaze
-      if (blink > 0.2) {
-        const irisRx = rx * 0.56 * pose.pupilScale;
-        const irisRy = Math.min(ry * 0.85, irisRx);
-        g.ellipse(eyeCenterX + gx * 0.75, eyeCenterY + gy * 0.65, irisRx, irisRy);
-        g.fill({ color: "#0284C7" });
-
-        const pupilRx = rx * 0.3 * pose.pupilScale;
-        const pupilRy = Math.min(ry * 0.65, pupilRx);
-        g.ellipse(eyeCenterX + gx * 0.85, eyeCenterY + gy * 0.72, pupilRx, pupilRy);
-        g.fill({ color: ink });
-      }
-
-      drawEyelidOverlay(
+      // Sclera with true parametric eyelid contour
+      const { visibleTop, visibleBottom } = traceEyeContour(
         g,
         eyeCenterX,
         eyeCenterY,
-        rx + 14 * scale,
-        ry + 14 * scale,
-        bgColor,
+        rx,
+        ry,
         pose.topLid,
         pose.bottomLid,
         pose.lidTilt,
         isLeft,
+        2,
       );
+      g.fill({ color: "#FFFFFF" });
+      g.stroke({ width: Math.max(3, 12 * scale), color: ink });
+
+      // Iris + Pupil constrained cleanly inside visible eye aperture
+      const apertureH = Math.max(0, visibleBottom - visibleTop);
+      const apertureMidY = (visibleTop + visibleBottom) * 0.5;
+      if (blink > 0.2 && apertureH > 22 * scale) {
+        const irisR = Math.min(rx * 0.56 * pose.pupilScale, apertureH * 0.44);
+        const pupilR = Math.min(rx * 0.3 * pose.pupilScale, apertureH * 0.26);
+        const clampedGazeY = Math.max(
+          -apertureH * 0.12,
+          Math.min(apertureH * 0.12, gy * 0.65),
+        );
+        g.ellipse(
+          eyeCenterX + gx * 0.72,
+          eyeCenterY + apertureMidY + clampedGazeY,
+          irisR,
+          irisR,
+        );
+        g.fill({ color: "#0284C7" });
+        g.ellipse(
+          eyeCenterX + gx * 0.8,
+          eyeCenterY + apertureMidY + clampedGazeY,
+          pupilR,
+          pupilR,
+        );
+        g.fill({ color: ink });
+      }
 
       if (showEyebrows) {
         drawCurvedBrow(
@@ -411,7 +463,6 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
         g.quadraticCurveTo(px, py - 52 * scale, px + w / 2, py + 18 * scale);
         g.stroke({ width: Math.max(6, 26 * scale), color: ink, cap: "round" });
       } else {
-        // Subtle glow + horizontal optical bar
         g.roundRect(
           px - w / 2 - 12 * scale,
           py - h / 2 - 12 * scale,
@@ -454,21 +505,19 @@ export function drawVectorEyes(params: VectorEyeDrawParams): void {
       const rx = 68 * pose.eyeWidth * breathe * scale;
       const ry = Math.max(8 * scale, 68 * pose.eyeHeight * breathe * blink * scale);
 
-      g.ellipse(px, py, rx, ry);
-      g.fill({ color: ink });
-
-      drawEyelidOverlay(
+      traceEyeContour(
         g,
         px,
         py,
-        rx + 10 * scale,
-        ry + 10 * scale,
-        bgColor,
+        rx,
+        ry,
         pose.topLid,
         pose.bottomLid,
         pose.lidTilt,
         isLeft,
+        2,
       );
+      g.fill({ color: ink });
 
       if (showEyebrows) {
         drawCurvedBrow(
