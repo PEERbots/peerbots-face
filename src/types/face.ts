@@ -390,6 +390,42 @@ export function createIncludedVizijFaces(assetBaseUrl?: string): VizijFace[] {
         },
       },
     },
+    {
+      kind: "Vizij",
+      name: "Dash 3D",
+      assetBundle: {
+        namespace: "dash3d",
+        glb: {
+          kind: "url",
+          src: `${base}/Vizij/Dash3D.glb`,
+          aggressiveImport: true,
+        },
+      },
+    },
+    {
+      kind: "Vizij",
+      name: "Mochi 3D",
+      assetBundle: {
+        namespace: "mochi3d",
+        glb: {
+          kind: "url",
+          src: `${base}/Vizij/Mochi3D.glb`,
+          aggressiveImport: true,
+        },
+      },
+    },
+    {
+      kind: "Vizij",
+      name: "Orbit 3D",
+      assetBundle: {
+        namespace: "orbit3d",
+        glb: {
+          kind: "url",
+          src: `${base}/Vizij/Orbit3D.glb`,
+          aggressiveImport: true,
+        },
+      },
+    },
     createCustomVizijFace(""),
   ];
 }
