@@ -58,8 +58,21 @@ export function FaceContainer({ frozen = false }: { frozen?: boolean }) {
         app.renderer.height ||
         600;
       const isLandscape = width > height;
-      const baseScale = isLandscape ? width / 1200 : height / 1200;
       const effectiveLandscape = settings.autoRotate ? isLandscape : true;
+      const effectiveAngle =
+        (((effectiveLandscape ? settings.rotation : 90 + settings.rotation) %
+          360) +
+          360) %
+        360;
+      const isQuarterTurn =
+        Math.abs(effectiveAngle - 90) < 45 ||
+        Math.abs(effectiveAngle - 270) < 45;
+
+      // Fit canonical face bounds (1000x660) inside the viewport in both dimensions
+      // so the face never clips off-screen in wide/short or tall/narrow containers.
+      const availW = isQuarterTurn ? height : width;
+      const availH = isQuarterTurn ? width : height;
+      const baseScale = Math.min(availW / 1000, availH / 660);
 
       setLayout({
         landscape: effectiveLandscape,
@@ -81,34 +94,32 @@ export function FaceContainer({ frozen = false }: { frozen?: boolean }) {
     window.addEventListener("orientationchange", onResize);
     app.renderer.on("resize", onResize);
 
+    let observer: ResizeObserver | null = null;
+    const canvasEl = app.canvas;
+    if (typeof ResizeObserver !== "undefined" && canvasEl?.parentElement) {
+      observer = new ResizeObserver(onResize);
+      observer.observe(canvasEl.parentElement);
+    }
+
     return () => {
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onResize);
       if (app?.renderer) {
         app.renderer.off("resize", onResize);
       }
+      observer?.disconnect();
     };
-  }, [app, isInitialised, settings.autoRotate]);
+  }, [app, isInitialised, settings.autoRotate, settings.rotation]);
 
   useTick(() => {
     if (app?.renderer && lastMessage) {
       const themeHex =
         color_mapping[lastMessage.color] ?? color_mapping["Light Blue"];
-      const vectorStyle =
-        selectedFace?.kind === "PixiFace" &&
-        selectedFace.type === "avatar" &&
-        selectedFace.eyes.kind === "vector"
-          ? selectedFace.eyes.style
-          : null;
       const colorRole =
         selectedFace?.kind === "PixiFace" && selectedFace.type === "avatar"
           ? (selectedFace.colorRole ?? "background")
           : "background";
-      const targetColor = resolveAvatarBackgroundHex(
-        themeHex,
-        vectorStyle,
-        colorRole,
-      );
+      const targetColor = resolveAvatarBackgroundHex(themeHex, colorRole);
       stepRendererBackgroundColor(app.renderer, targetColor);
     }
   });

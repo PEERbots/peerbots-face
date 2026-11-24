@@ -83,7 +83,6 @@ export type VectorFaceStyleId =
   | "pebble"
   | "dash"
   | "orbit"
-  | "pulse"
   | "pixel"
   | "slate";
 
@@ -306,20 +305,6 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       eyebrows: "vector",
       colorRole: "background",
       category: "balanced",
-    },
-    {
-      kind: "PixiFace",
-      type: "avatar",
-      name: "Pulse",
-      mouth: "ZigZag",
-      eyes: {
-        kind: "vector",
-        style: "pulse",
-      },
-      cheeks: null,
-      eyebrows: null,
-      colorRole: "accent",
-      category: "sleek",
     },
     {
       kind: "PixiFace",

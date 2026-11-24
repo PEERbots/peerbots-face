@@ -13,7 +13,6 @@ import { useFaceStore } from "../store/FaceStoreContext";
 import { color_mapping } from "../helpers/color_mappers";
 import {
   NEUTRAL_POSE,
-  resolveConversationGazeOffset,
   resolveTargetPose,
   stepFacePose,
   type FacePose,
@@ -59,7 +58,6 @@ export function FaceEyes({
   const face = useFaceStore((state) => state.selectedFace);
   const gaze = useFaceStore((state) => state.gaze);
   const blinkNonce = useFaceStore((state) => state.blinkNonce);
-  const conversationState = useFaceStore((state) => state.conversationState);
   const extendedExpression = useFaceStore((state) => state.extendedExpression);
   const facsOverrides = useFaceStore((state) => state.facsOverrides);
   const faceSettings = useFaceStore((state) => state.faceSettings);
@@ -129,14 +127,12 @@ export function FaceEyes({
       resolveTargetPose(targetEmotion, {
         extendedExpression,
         expressivity: faceSettings.vizijSettings?.faceExpressivity ?? 1,
-        conversationState,
         facsOverrides,
       }),
     [
       targetEmotion,
       extendedExpression,
       faceSettings.vizijSettings?.faceExpressivity,
-      conversationState,
       facsOverrides,
     ],
   );
@@ -183,11 +179,7 @@ export function FaceEyes({
 
   const themeHex =
     color_mapping[message?.color ?? "Light Blue"] ?? color_mapping["Light Blue"];
-  const resolvedBgHex = resolveAvatarBackgroundHex(
-    themeHex,
-    vectorStyle,
-    colorRole,
-  );
+  const resolvedBgHex = resolveAvatarBackgroundHex(themeHex, colorRole);
 
   const showVectorEyebrows =
     face?.kind === "PixiFace" &&
@@ -272,12 +264,10 @@ export function FaceEyes({
       }
     }
 
-    // Gaze + subtle HRI conversation aversion when no explicit target is held
-    const convGaze = resolveConversationGazeOffset(conversationState, t);
     const gazeWeight =
       gaze.weight ?? (Math.abs(gaze.x) > 0.001 || Math.abs(gaze.y) > 0.001 ? 1 : 0);
-    const effectiveGazeX = gaze.x * gazeWeight + convGaze.x * (1 - gazeWeight);
-    const effectiveGazeY = gaze.y * gazeWeight + convGaze.y * (1 - gazeWeight);
+    const effectiveGazeX = gaze.x * gazeWeight;
+    const effectiveGazeY = gaze.y * gazeWeight;
 
     const gazeAlpha = dtSeconds <= 0 ? 0 : 1 - Math.exp(-8 * dtSeconds);
     currentGazeRef.current.x +=

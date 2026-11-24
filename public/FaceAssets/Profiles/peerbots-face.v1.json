@@ -2,7 +2,7 @@
   "id": "peerbots-face",
   "version": "v1",
   "title": "Peerbots Face",
-  "description": "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech amplitude, conversation state, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
+  "description": "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech state/amplitude, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
   "scope": "face",
   "keys": [
     {
@@ -123,7 +123,7 @@
       "meta": { "tier": "appearance" }
     },
     {
-      "path": "peerbots/speech/amplitude",
+      "path": "peerbots/speech/speaking",
       "kind": "input",
       "value_type": "f32",
       "min": 0.0,
@@ -132,31 +132,13 @@
       "meta": { "tier": "viseme" }
     },
     {
-      "path": "peerbots/conversation/speaking",
+      "path": "peerbots/speech/amplitude",
       "kind": "input",
       "value_type": "f32",
       "min": 0.0,
       "max": 1.0,
       "default_value": { "f32": 0.0 },
-      "meta": { "tier": "conversation" }
-    },
-    {
-      "path": "peerbots/conversation/user_speaking",
-      "kind": "input",
-      "value_type": "f32",
-      "min": 0.0,
-      "max": 1.0,
-      "default_value": { "f32": 0.0 },
-      "meta": { "tier": "conversation" }
-    },
-    {
-      "path": "peerbots/conversation/thinking",
-      "kind": "input",
-      "value_type": "f32",
-      "min": 0.0,
-      "max": 1.0,
-      "default_value": { "f32": 0.0 },
-      "meta": { "tier": "conversation" }
+      "meta": { "tier": "viseme" }
     },
     {
       "path": "peerbots/scene/scale",

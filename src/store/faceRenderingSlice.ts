@@ -10,7 +10,6 @@ import {
 } from "../types/face";
 import type {
   FacsOverrides,
-  PeerbotsConversationState,
   VizijStandardExpression,
 } from "../types/profile";
 
@@ -27,7 +26,6 @@ export interface FaceRenderingSlice {
   faceSettings: FaceSettings;
   gaze: FaceGaze;
   blinkNonce: number;
-  conversationState: PeerbotsConversationState;
   extendedExpression: VizijStandardExpression | null;
   facsOverrides: FacsOverrides;
   setFace: (face: Face) => void;
@@ -36,7 +34,6 @@ export interface FaceRenderingSlice {
   resetPositioning: () => void;
   setGaze: (gaze: FaceGaze) => void;
   triggerBlink: () => void;
-  setConversationState: (state: PeerbotsConversationState) => void;
   setExtendedExpression: (expression: VizijStandardExpression | null) => void;
   setFacsOverrides: (overrides: FacsOverrides) => void;
   setLanguage: (lang: string | null) => void;
@@ -124,7 +121,6 @@ export function createFaceRenderingSlice(
     faceSettings: initialMergedSettings,
     gaze: { x: 0, y: 0 },
     blinkNonce: 0,
-    conversationState: "idle",
     extendedExpression: null,
     facsOverrides: {},
 
@@ -168,10 +164,6 @@ export function createFaceRenderingSlice(
 
     triggerBlink: () => {
       set((state) => ({ blinkNonce: state.blinkNonce + 1 }));
-    },
-
-    setConversationState: (conversationState) => {
-      set({ conversationState });
     },
 
     setExtendedExpression: (extendedExpression) => {
