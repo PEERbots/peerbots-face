@@ -75,7 +75,17 @@ export interface AmplitudePoint {
   value: number;
 }
 
-export type PixiMouthShape = "Hugo" | "ZigZag" | "Ellipse" | "Beak";
+export type PixiMouthShape =
+  | "Hugo"
+  | "ZigZag"
+  | "Ellipse"
+  | "Beak"
+  | "Equalizer"
+  | "PixelMatrix"
+  | "Cat"
+  | "Capsule"
+  | "Arc"
+  | "SoftCurve";
 
 export type VectorFaceStyleId =
   | "hugo"
@@ -85,6 +95,16 @@ export type VectorFaceStyleId =
   | "orbit"
   | "pixel"
   | "slate";
+
+export type PixiCheekStyle = "coralOval" | "pinkBlush" | "warmOval";
+
+export type PixiEyebrowStyle =
+  | "Hugo"
+  | "delicateArch"
+  | "softArch"
+  | "thickArch"
+  | "flatBar"
+  | "vector";
 
 export type PixiEyeConfig =
   | { kind: "spritesheet"; path: string }
@@ -99,8 +119,11 @@ export type PixiAvatar = FaceBase & {
   type: "avatar";
   mouth: PixiMouthShape;
   eyes: PixiEyeConfig;
-  cheeks: { kind: "texture"; path: string } | { kind: "vector" } | null;
-  eyebrows: "Hugo" | "vector" | null;
+  cheeks:
+    | { kind: "texture"; path: string }
+    | { kind: "vector"; style?: PixiCheekStyle }
+    | null;
+  eyebrows: PixiEyebrowStyle | null;
   colorRole?: PixiColorRole;
   category?: FaceStyleCategory;
 };
@@ -233,8 +256,8 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
         kind: "vector",
         style: "hugo",
       },
-      cheeks: { kind: "vector" },
-      eyebrows: "vector",
+      cheeks: { kind: "vector", style: "coralOval" },
+      eyebrows: "delicateArch",
       colorRole: "background",
       category: "cute",
     },
@@ -277,12 +300,12 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Mochi",
-      mouth: "Hugo",
+      mouth: "Cat",
       eyes: {
         kind: "vector",
         style: "mochi",
       },
-      cheeks: { kind: "vector" },
+      cheeks: { kind: "vector", style: "pinkBlush" },
       eyebrows: null,
       colorRole: "background",
       category: "cute",
@@ -291,13 +314,13 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Pebble",
-      mouth: "Hugo",
+      mouth: "SoftCurve",
       eyes: {
         kind: "vector",
         style: "pebble",
       },
       cheeks: null,
-      eyebrows: "vector",
+      eyebrows: "softArch",
       colorRole: "background",
       category: "cute",
     },
@@ -305,7 +328,7 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Dash",
-      mouth: "Ellipse",
+      mouth: "Equalizer",
       eyes: {
         kind: "vector",
         style: "dash",
@@ -319,13 +342,13 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Orbit",
-      mouth: "Hugo",
+      mouth: "Arc",
       eyes: {
         kind: "vector",
         style: "orbit",
       },
       cheeks: null,
-      eyebrows: "vector",
+      eyebrows: "thickArch",
       colorRole: "background",
       category: "balanced",
     },
@@ -333,7 +356,7 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Pixel",
-      mouth: "ZigZag",
+      mouth: "PixelMatrix",
       eyes: {
         kind: "vector",
         style: "pixel",
@@ -347,13 +370,13 @@ export function createBuiltInPixiFaces(assetBaseUrl?: string): PixiFace[] {
       kind: "PixiFace",
       type: "avatar",
       name: "Slate",
-      mouth: "Ellipse",
+      mouth: "Capsule",
       eyes: {
         kind: "vector",
         style: "slate",
       },
       cheeks: null,
-      eyebrows: "vector",
+      eyebrows: "flatBar",
       colorRole: "background",
       category: "sleek",
     },

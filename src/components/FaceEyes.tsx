@@ -185,11 +185,21 @@ export function FaceEyes({
     face?.kind === "PixiFace" &&
     face.type === "avatar" &&
     face.eyebrows !== null;
+  const vectorEyebrowStyle =
+    face?.kind === "PixiFace" && face.type === "avatar"
+      ? face.eyebrows
+      : null;
   const showVectorCheeks =
     face?.kind === "PixiFace" &&
     face.type === "avatar" &&
     face.cheeks !== null &&
     pixiSettings?.cheekDisplay !== "none";
+  const vectorCheekStyle =
+    face?.kind === "PixiFace" &&
+    face.type === "avatar" &&
+    face.cheeks?.kind === "vector"
+      ? (face.cheeks.style ?? null)
+      : null;
 
   const drawVector = useCallback(
     (g: Graphics) => {
@@ -212,6 +222,8 @@ export function FaceEyes({
         colorRole,
         showEyebrows: showVectorEyebrows,
         showCheeks: showVectorCheeks,
+        eyebrowStyle: vectorEyebrowStyle,
+        cheekStyle: vectorCheekStyle,
       });
     },
     [
@@ -226,6 +238,8 @@ export function FaceEyes({
       colorRole,
       showVectorEyebrows,
       showVectorCheeks,
+      vectorEyebrowStyle,
+      vectorCheekStyle,
     ],
   );
 

@@ -11,6 +11,12 @@ import {
   includedVizijFaces,
   type PeerbotsColor,
   type PeerbotsEmotion,
+  type PixiAvatar,
+  type PixiCheekStyle,
+  type PixiColorRole,
+  type PixiEyebrowStyle,
+  type PixiMouthShape,
+  type VectorFaceStyleId,
 } from "../types/face";
 import {
   estimateVisemesFromText,
@@ -897,4 +903,230 @@ export const SlateCalmArchitectural: Story = {
       </FaceStoreProvider>
     );
   },
+};
+
+const EYE_STYLES: readonly VectorFaceStyleId[] = [
+  "hugo",
+  "mochi",
+  "pebble",
+  "dash",
+  "orbit",
+  "pixel",
+  "slate",
+];
+
+const EYEBROW_OPTIONS: readonly { label: string; value: PixiEyebrowStyle | "none" }[] = [
+  { label: "None", value: "none" },
+  { label: "Delicate Arch (Hugo)", value: "delicateArch" },
+  { label: "Soft Arch (Pebble)", value: "softArch" },
+  { label: "Thick Arch (Orbit)", value: "thickArch" },
+  { label: "Flat Bar (Slate)", value: "flatBar" },
+];
+
+const CHEEK_OPTIONS: readonly { label: string; value: PixiCheekStyle | "none" }[] = [
+  { label: "None", value: "none" },
+  { label: "Coral Oval (Hugo)", value: "coralOval" },
+  { label: "Pink Blush (Mochi)", value: "pinkBlush" },
+  { label: "Warm Oval", value: "warmOval" },
+];
+
+const MOUTH_OPTIONS: readonly PixiMouthShape[] = [
+  "Hugo",
+  "SoftCurve",
+  "Cat",
+  "Equalizer",
+  "PixelMatrix",
+  "Capsule",
+  "Arc",
+  "Ellipse",
+  "ZigZag",
+  "Beak",
+];
+
+function PixiPartComposerStory() {
+  const [eyes, setEyes] = useState<VectorFaceStyleId>("pebble");
+  const [eyebrows, setEyebrows] = useState<PixiEyebrowStyle | "none">("softArch");
+  const [cheeks, setCheeks] = useState<PixiCheekStyle | "none">("pinkBlush");
+  const [mouth, setMouth] = useState<PixiMouthShape>("Cat");
+  const [colorRole, setColorRole] = useState<PixiColorRole>("background");
+  const [emotion, setEmotion] = useState<PeerbotsEmotion>("Happy");
+  const [color, setColor] = useState<PeerbotsColor>("Light Blue");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const [store] = useState(() =>
+    createPeerbotsFaceStore({
+      isSilent: true,
+      initialMessage: {
+        title: "Custom",
+        speech: "",
+        color: "Light Blue",
+        emotion: "Happy",
+      },
+    }),
+  );
+
+  useEffect(() => {
+    const composedFace: PixiAvatar = {
+      kind: "PixiFace",
+      name: "Custom Composed",
+      type: "avatar",
+      eyes: { kind: "vector", style: eyes },
+      eyebrows: eyebrows === "none" ? null : eyebrows,
+      cheeks: cheeks === "none" ? null : { kind: "vector", style: cheeks },
+      mouth,
+      colorRole,
+    };
+    store.getState().setFace(composedFace);
+    store.setState({
+      lastMessage: {
+        title: emotion,
+        speech: isSpeaking ? "Mixing and matching parts!" : "",
+        color,
+        emotion,
+      },
+      isSpeaking,
+      currentAmplitude: isSpeaking ? 0.72 : 0,
+    });
+  }, [eyes, eyebrows, cheeks, mouth, colorRole, emotion, color, isSpeaking, store]);
+
+  return (
+    <div className="flex flex-col w-full min-h-[540px] bg-slate-950 text-slate-100">
+      <div
+        className="flex flex-wrap items-center gap-3 px-4 py-3 bg-slate-900 border-b border-slate-800 text-xs"
+        role="toolbar"
+        aria-label="Pixi face part composer controls"
+      >
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Eyes:</span>
+          <select
+            aria-label="Eyes style"
+            value={eyes}
+            onChange={(e) => setEyes(e.target.value as VectorFaceStyleId)}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {EYE_STYLES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Eyebrows:</span>
+          <select
+            aria-label="Eyebrows style"
+            value={eyebrows}
+            onChange={(e) => setEyebrows(e.target.value as PixiEyebrowStyle | "none")}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {EYEBROW_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Cheeks:</span>
+          <select
+            aria-label="Cheeks style"
+            value={cheeks}
+            onChange={(e) => setCheeks(e.target.value as PixiCheekStyle | "none")}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {CHEEK_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Mouth:</span>
+          <select
+            aria-label="Mouth shape"
+            value={mouth}
+            onChange={(e) => setMouth(e.target.value as PixiMouthShape)}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {MOUTH_OPTIONS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Color Role:</span>
+          <select
+            aria-label="Color role"
+            value={colorRole}
+            onChange={(e) => setColorRole(e.target.value as PixiColorRole)}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            <option value="background">Background</option>
+            <option value="accent">Accent (Dark Visor)</option>
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Emotion:</span>
+          <select
+            aria-label="Emotion"
+            value={emotion}
+            onChange={(e) => setEmotion(e.target.value as PeerbotsEmotion)}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {PEERBOTS_EMOTIONS.map((emo) => (
+              <option key={emo} value={emo}>
+                {emo}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5">
+          <span className="text-slate-200 font-medium">Color:</span>
+          <select
+            aria-label="Color"
+            value={color}
+            onChange={(e) => setColor(e.target.value as PeerbotsColor)}
+            className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          >
+            {PEERBOTS_COLORS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setIsSpeaking((prev) => !prev)}
+          className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+            isSpeaking
+              ? "bg-teal-700 text-white"
+              : "bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700"
+          }`}
+        >
+          {isSpeaking ? "Stop Speaking" : "Simulate Speech"}
+        </button>
+      </div>
+
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[460px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    </div>
+  );
+}
+
+export const PixiPartComposer: Story = {
+  render: () => <PixiPartComposerStory />,
 };

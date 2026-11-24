@@ -10,11 +10,15 @@ import {
   PEERBOTS_PROFILE_KEYS,
   VIZIJ_STANDARD_KEYS,
   buildProfileControlValues,
+  createBuiltInPixiFaces,
   createPeerbotsFaceStore,
   defaultFaceSettings,
   inspectGlbProfileConnection,
   resolveTargetPose,
   stepFacePose,
+  type PixiCheekStyle,
+  type PixiEyebrowStyle,
+  type PixiMouthShape,
   type VectorFaceStyleId,
 } from "../../src";
 import {
@@ -22,6 +26,9 @@ import {
   drawVectorEyes,
   drawVectorMouth,
   resolveAvatarBackgroundHex,
+  resolveCheekStyle,
+  resolveEyebrowStyle,
+  resolveMouthShape,
   resolveVectorInkHex,
 } from "../../src/components/vectorFaces/drawVectorFace";
 
@@ -291,5 +298,106 @@ describe("Parametric FacePose solver & 7 PixiJS vector face styles", () => {
       });
       expect(gMouthTalk.clear).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it("composes eyes, eyebrows, cheeks, and mouths independently for future custom faces", () => {
+    // Explicit overrides win over style defaults; null disables the part
+    expect(resolveCheekStyle("hugo")).toBe("coralOval");
+    expect(resolveCheekStyle("hugo", null)).toBeNull();
+    expect(resolveCheekStyle("dash", "warmOval")).toBe("warmOval");
+
+    expect(resolveEyebrowStyle("pebble")).toBe("softArch");
+    expect(resolveEyebrowStyle("pebble", "vector")).toBe("softArch");
+    expect(resolveEyebrowStyle("pebble", null)).toBeNull();
+    expect(resolveEyebrowStyle("dash", "flatBar")).toBe("flatBar");
+
+    expect(resolveMouthShape("mochi")).toBe("Cat");
+    expect(resolveMouthShape("mochi", "Equalizer")).toBe("Equalizer");
+
+    // Mix-and-match eyes + eyebrows + cheeks
+    const cheeks: (PixiCheekStyle | null)[] = [
+      "coralOval",
+      "pinkBlush",
+      "warmOval",
+      null,
+    ];
+    const brows: (PixiEyebrowStyle | null)[] = [
+      "delicateArch",
+      "softArch",
+      "thickArch",
+      "flatBar",
+      "Hugo",
+      null,
+    ];
+    for (const cheekStyle of cheeks) {
+      for (const eyebrowStyle of brows) {
+        const gEyes = createFakeGraphics();
+        drawVectorEyes({
+          graphics: gEyes,
+          style: "dash",
+          pose: EMOTION_POSES.Happy,
+          scale: 0.8,
+          breatheLeft: 1,
+          breatheRight: 1,
+          blink: 1,
+          gazeX: 0,
+          gazeY: 0,
+          bgColor: DARK_VISOR_HEX,
+          themeColor: "#38BDF8",
+          colorRole: "accent",
+          showEyebrows: eyebrowStyle !== null,
+          showCheeks: cheekStyle !== null,
+          eyebrowStyle,
+          cheekStyle,
+        });
+        expect(gEyes.clear).toHaveBeenCalledTimes(1);
+      }
+    }
+
+    // All 10 composable mouth shapes render cleanly on any eye style
+    const mouthShapes: PixiMouthShape[] = [
+      "Hugo",
+      "Equalizer",
+      "PixelMatrix",
+      "Cat",
+      "Capsule",
+      "Arc",
+      "SoftCurve",
+      "Ellipse",
+      "ZigZag",
+      "Beak",
+    ];
+    for (const mouthShape of mouthShapes) {
+      for (const talking of [false, true]) {
+        const gMouth = createFakeGraphics();
+        drawVectorMouth({
+          graphics: gMouth,
+          style: "hugo",
+          mouthShape,
+          scale: 0.75,
+          talking,
+          talkingScale: talking ? 0.7 : 0,
+          talkingTime: talking ? 800 : 0,
+          themeColor: "#ABE3FA",
+          colorRole: "background",
+        });
+        expect(gMouth.clear).toHaveBeenCalledTimes(1);
+      }
+    }
+
+    // Built-in presets are explicit part recipes
+    const builtIns = createBuiltInPixiFaces();
+    const hugo = builtIns.find((f) => f.name === "Hugo");
+    expect(hugo?.type === "avatar" && hugo.mouth).toBe("Hugo");
+    expect(hugo?.type === "avatar" && hugo.eyebrows).toBe("delicateArch");
+    expect(hugo?.type === "avatar" && hugo.cheeks).toEqual({
+      kind: "vector",
+      style: "coralOval",
+    });
+
+    const dash = builtIns.find((f) => f.name === "Dash");
+    expect(dash?.type === "avatar" && dash.mouth).toBe("Equalizer");
+    expect(dash?.type === "avatar" && dash.eyebrows).toBeNull();
+    expect(dash?.type === "avatar" && dash.cheeks).toBeNull();
   });
 });
