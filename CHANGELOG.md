@@ -1,5 +1,12 @@
 # @peerbots/face
 
+## 0.4.0
+
+### Minor Changes
+
+- [#7](https://github.com/PEERbots/peerbots-face/pull/7) [`b4b6ecd`](https://github.com/PEERbots/peerbots-face/commit/b4b6ecd6b8d995221fd9e41e78cf29d15e43ad41) Thanks [@sbeleidy](https://github.com/sbeleidy)! - - Restore `variant="primary"` (Peerbots Teal) on the **Tap to Enable Sound** (`FaceAudioPrompt`) and **Allow Speech** (`CharacterSelectionControls`) buttons to match `app.peerbots.org` `main`.
+  - Add a **Caption Style** setting (`captions.style`: `"pill"` | `"outline"`, defaulting to `"pill"`) in `FaceBehaviorControls` and `FaceCaption` so users can choose between the translucent dark pill backdrop and classic outlined caption text.
+
 ## 0.3.0
 
 ### Minor Changes
