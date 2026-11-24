@@ -341,6 +341,15 @@ function VizijPoseSetter() {
     let cancelled = false;
     async function runVisemes() {
       if (!spokenVisemes) return;
+      // Single viseme with time === 0 holds that pose for interactive viseme inspection
+      if (spokenVisemes.length === 1 && spokenVisemes[0].time === 0) {
+        const val = spokenVisemes[0].value as PollyViseme;
+        await expressViseme("sil", 0.06);
+        if (!cancelled && val !== "sil") {
+          await expressViseme(val, 0.12);
+        }
+        return;
+      }
       let prevViseme: PollyViseme | undefined;
       let prevTime = 0;
       for (const viseme of spokenVisemes) {
