@@ -1,7 +1,7 @@
 import type { PeerbotsColor } from "@peerbots/core";
-import type { VizijAssetBundle } from "@vizij/runtime-react";
+import type { VizijSource } from "@vizij/runtime-react";
 
-export type { PeerbotsColor };
+export type { PeerbotsColor, VizijSource };
 export type FaceColor = PeerbotsColor;
 
 export const PEERBOTS_COLORS: readonly PeerbotsColor[] = [
@@ -115,10 +115,33 @@ export type PixiText = FaceBase & {
 
 export type PixiFace = PixiAvatar | PixiText;
 
+export interface LegacyVizijAssetBundle {
+  namespace?: string;
+  glb: {
+    kind: "url";
+    src: string;
+    aggressiveImport?: boolean;
+  };
+}
+
 export type VizijFace = FaceBase & {
   kind: "Vizij";
-  assetBundle: VizijAssetBundle;
+  /** Vizij 1.0 GLB source (URL, Blob, ArrayBuffer, or Uint8Array). */
+  glb?: VizijSource;
+  /** @deprecated Backwards-compatible pre-1.0 asset bundle shape. */
+  assetBundle?: LegacyVizijAssetBundle;
 };
+
+/**
+ * Resolves the GLB source from either the Vizij 1.0 `glb` property or legacy `assetBundle.glb.src`.
+ */
+export function resolveVizijGlbSource(face: VizijFace): VizijSource | null {
+  if (face.glb !== undefined && face.glb !== null && face.glb !== "") {
+    return face.glb;
+  }
+  const legacySrc = face.assetBundle?.glb?.src;
+  return legacySrc ? legacySrc : null;
+}
 
 export type Face = PixiFace | VizijFace;
 

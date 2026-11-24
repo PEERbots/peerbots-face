@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { createPeerbotsFaceStore } from "../store/createPeerbotsFaceStore";
 import { FaceStoreProvider } from "../store/FaceStoreContext";
-import { builtInFaces } from "../types/face";
+import { availableFaces, builtInFaces } from "../types/face";
 import { FaceView } from "./FaceView";
 
 const meta: Meta<typeof FaceView> = {
@@ -169,6 +169,31 @@ export const SlateCalmArchitectural: Story = {
         speech: "Let us work through this step by step.",
         color: "Grey",
         emotion: "Neutral",
+      },
+    });
+    return (
+      <FaceStoreProvider store={store}>
+        <div className="w-full h-[420px]">
+          <FaceView />
+        </div>
+      </FaceStoreProvider>
+    );
+  },
+};
+
+export const HugoVizijExpressive: Story = {
+  render: () => {
+    const hugoVizij =
+      availableFaces.find((f) => f.kind === "Vizij" && f.name === "Hugo - Expressive") ??
+      builtInFaces[0];
+    const store = createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: hugoVizij,
+      initialMessage: {
+        title: "Hello",
+        speech: "Hello from Vizij Hugo!",
+        color: "Light Blue",
+        emotion: "Happy",
       },
     });
     return (

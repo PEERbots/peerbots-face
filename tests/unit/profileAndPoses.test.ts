@@ -13,8 +13,10 @@ import {
   createPeerbotsFaceStore,
   defaultFaceSettings,
   inspectGlbProfileConnection,
+  mapVisemeToStandardViseme,
   resolveConversationGazeOffset,
   resolveTargetPose,
+  resolveVizijGlbSource,
   stepFacePose,
   type VectorFaceStyleId,
 } from "../../src";
@@ -185,6 +187,66 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
 
     store.getState().setGaze({ x: 0.25, y: -0.25, weight: 0.9 });
     expect(store.getState().gaze).toEqual({ x: 0.25, y: -0.25, weight: 0.9 });
+
+    const report = inspectGlbProfileConnection([
+      "rig/hugo/peerbots/expression/happy",
+      "rig/hugo/peerbots/color/r",
+      "rig/hugo/peerbots/color/g",
+      "rig/hugo/peerbots/color/b",
+      "rig/hugo/peerbots/scene/rotation",
+    ]);
+    store.getState().setVizijConnectionReport(report);
+    expect(store.getState().vizijConnectionReport?.sceneTransform.rotation).toBe(
+      true,
+    );
+    // Switching face clears previous GLB report
+    store.getState().setFaceByName("Robotic");
+    expect(store.getState().vizijConnectionReport).toBeNull();
+  });
+
+  it("resolves Vizij 1.0 glb and legacy assetBundle sources and maps Polly visemes to Oculus 15-viseme standard", () => {
+    expect(
+      resolveVizijGlbSource({
+        kind: "Vizij",
+        name: "V1",
+        glb: "/faces/hugo.glb",
+      }),
+    ).toBe("/faces/hugo.glb");
+
+    expect(
+      resolveVizijGlbSource({
+        kind: "Vizij",
+        name: "Legacy",
+        assetBundle: {
+          namespace: "hugo",
+          glb: { kind: "url", src: "/legacy/hugo.glb" },
+        },
+      }),
+    ).toBe("/legacy/hugo.glb");
+
+    expect(
+      resolveVizijGlbSource({
+        kind: "Vizij",
+        name: "Empty",
+      }),
+    ).toBeNull();
+
+    expect(mapVisemeToStandardViseme("a")).toBe("aa");
+    expect(mapVisemeToStandardViseme("p")).toBe("PP");
+    expect(mapVisemeToStandardViseme("f")).toBe("FF");
+    expect(mapVisemeToStandardViseme("T")).toBe("TH");
+    expect(mapVisemeToStandardViseme("t")).toBe("DD");
+    expect(mapVisemeToStandardViseme("k")).toBe("kk");
+    expect(mapVisemeToStandardViseme("S")).toBe("CH");
+    expect(mapVisemeToStandardViseme("s")).toBe("SS");
+    expect(mapVisemeToStandardViseme("l")).toBe("nn");
+    expect(mapVisemeToStandardViseme("r")).toBe("RR");
+    expect(mapVisemeToStandardViseme("e")).toBe("E");
+    expect(mapVisemeToStandardViseme("i")).toBe("ih");
+    expect(mapVisemeToStandardViseme("o")).toBe("oh");
+    expect(mapVisemeToStandardViseme("u")).toBe("ou");
+    expect(mapVisemeToStandardViseme("sil")).toBe("sil");
+    expect(mapVisemeToStandardViseme("unknown")).toBe("sil");
   });
 });
 

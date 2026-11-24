@@ -45,30 +45,43 @@ function restorePersistedFace(
     if (typeof selectionObj.name === "string") {
       const found = builtIns.find((f) => f.name === selectionObj.name);
       if (found) {
-        if (
-          found.kind === "Vizij" &&
-          selectionObj.assetBundle &&
-          typeof selectionObj.assetBundle === "object"
-        ) {
-          const persistedBundle = selectionObj.assetBundle as Record<
-            string,
-            unknown
-          >;
-          const persistedGlb =
-            persistedBundle.glb && typeof persistedBundle.glb === "object"
-              ? (persistedBundle.glb as Record<string, unknown>)
-              : {};
-          return {
-            ...found,
-            assetBundle: {
-              ...found.assetBundle,
-              ...persistedBundle,
-              glb: {
-                ...found.assetBundle.glb,
-                ...persistedGlb,
-              } as typeof found.assetBundle.glb,
-            },
-          };
+        if (found.kind === "Vizij") {
+          const persistedGlbDirect =
+            typeof selectionObj.glb === "string" ? selectionObj.glb : undefined;
+          if (
+            selectionObj.assetBundle &&
+            typeof selectionObj.assetBundle === "object"
+          ) {
+            const persistedBundle = selectionObj.assetBundle as Record<
+              string,
+              unknown
+            >;
+            const persistedGlb =
+              persistedBundle.glb && typeof persistedBundle.glb === "object"
+                ? (persistedBundle.glb as Record<string, unknown>)
+                : {};
+            const baseGlb = found.assetBundle?.glb ?? {
+              kind: "url" as const,
+              src: "",
+              aggressiveImport: true,
+            };
+            const mergedGlb = {
+              ...baseGlb,
+              ...persistedGlb,
+            };
+            return {
+              ...found,
+              glb: persistedGlbDirect ?? (mergedGlb.src || found.glb),
+              assetBundle: {
+                ...(found.assetBundle ?? {}),
+                ...persistedBundle,
+                glb: mergedGlb,
+              },
+            };
+          }
+          if (persistedGlbDirect) {
+            return { ...found, glb: persistedGlbDirect };
+          }
         }
         return found;
       }

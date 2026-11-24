@@ -9,6 +9,9 @@ const sharedExternal = [
   "pixi.js",
   "@pixi/react",
   "@vizij/runtime-react",
+  "@vizij/render",
+  "@vizij/runtime",
+  "three",
   "zustand",
   "zustand/middleware",
 ];
