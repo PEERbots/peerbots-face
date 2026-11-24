@@ -12,6 +12,7 @@ import {
   type PeerbotsColor,
   type PeerbotsEmotion,
 } from "../types/face";
+import { estimateVisemesFromText } from "../helpers/viseme_mapper";
 import { FaceView } from "./FaceView";
 
 interface PlaygroundArgs {
@@ -223,9 +224,12 @@ function VizijFacePlayground(args: PlaygroundArgs) {
     includedVizijFaces[0];
 
   const [selectedVizijName, setSelectedVizijName] = useState(initialVizij.name);
+  const [speechText, setSpeechText] = useState(
+    "Hello! I am Hugo. Watch my mouth move as I speak!",
+  );
   const [store] = useState(() =>
     createPeerbotsFaceStore({
-      isSilent: true,
+      isSilent: false,
       initialFace: initialVizij,
       initialMessage: {
         title: args.emotion,
@@ -247,14 +251,14 @@ function VizijFacePlayground(args: PlaygroundArgs) {
     store.setState({
       lastMessage: {
         title: args.emotion,
-        speech: args.isSpeaking ? "Hello! Testing Vizij face rig." : "",
+        speech: args.isSpeaking ? speechText : "",
         color: args.color,
         emotion: args.emotion,
       },
       isSpeaking: args.isSpeaking,
       currentAmplitude: args.isSpeaking ? 0.65 : 0,
     });
-  }, [store, args.emotion, args.color, args.isSpeaking]);
+  }, [store, args.emotion, args.color, args.isSpeaking, speechText]);
 
   useEffect(() => {
     store.getState().setFaceSettings({
@@ -276,72 +280,133 @@ function VizijFacePlayground(args: PlaygroundArgs) {
     store.getState().setFace(createCustomVizijFace(url));
   };
 
+  const handleSpeak = () => {
+    const trimmed = speechText.trim();
+    if (!trimmed) return;
+    const current = store.getState().lastMessage;
+    void store.getState().express({
+      ...current,
+      title: current.emotion,
+      speech: trimmed,
+    });
+  };
+
+  const handleSilentLipsyncDemo = () => {
+    const trimmed = speechText.trim();
+    if (!trimmed) return;
+    const visemes = estimateVisemesFromText(trimmed);
+    store.setState({
+      isSpeaking: true,
+      spokenVisemes: [...visemes],
+    });
+  };
+
+  const handleStopSpeech = () => {
+    store.getState().stopSpeech();
+    store.setState({ spokenVisemes: null, isSpeaking: false, currentAmplitude: 0 });
+  };
+
   return (
     <FaceStoreProvider store={store}>
-      <div className="flex flex-col w-full h-[560px] bg-slate-950">
+      <div className="flex flex-col w-full h-[580px] bg-slate-950">
         <div
-          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-900 text-slate-100 text-xs border-b border-slate-800"
+          className="flex flex-col gap-2 px-3 py-2 bg-slate-900 text-slate-100 text-xs border-b border-slate-800"
           role="toolbar"
-          aria-label="Vizij face selector and emotion controls"
+          aria-label="Vizij face selector, emotions, and speech lipsync controls"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-1.5">
-              <span className="text-slate-400">Vizij Face:</span>
-              <select
-                aria-label="Select Vizij face"
-                value={
-                  VIZIJ_FACE_NAMES.includes(selectedVizijName)
-                    ? selectedVizijName
-                    : ""
-                }
-                onChange={(e) => handleSelectVizij(e.target.value)}
-                className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5">
+                <span className="text-slate-400">Vizij Face:</span>
+                <select
+                  aria-label="Select Vizij face"
+                  value={
+                    VIZIJ_FACE_NAMES.includes(selectedVizijName)
+                      ? selectedVizijName
+                      : ""
+                  }
+                  onChange={(e) => handleSelectVizij(e.target.value)}
+                  className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+                >
+                  {VIZIJ_FACE_NAMES.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
+                Upload .glb
+                <input
+                  type="file"
+                  accept=".glb"
+                  aria-label="Upload custom Vizij GLB file"
+                  className="sr-only"
+                  onChange={(e) =>
+                    handleUploadGlb(e.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              {PEERBOTS_EMOTIONS.map((emo) => (
+                <button
+                  key={emo}
+                  type="button"
+                  onClick={() =>
+                    store.setState({
+                      lastMessage: {
+                        ...store.getState().lastMessage,
+                        title: emo,
+                        emotion: emo,
+                      },
+                    })
+                  }
+                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-teal-600 text-white transition-colors cursor-pointer"
+                >
+                  {emo}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => store.getState().triggerBlink()}
+                className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
               >
-                {VIZIJ_FACE_NAMES.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
-              Upload .glb
+                Blink
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex-1 min-w-[220px] flex items-center gap-1.5">
+              <span className="text-slate-400 shrink-0">Speech:</span>
               <input
-                type="file"
-                accept=".glb"
-                aria-label="Upload custom Vizij GLB file"
-                className="sr-only"
-                onChange={(e) =>
-                  handleUploadGlb(e.target.files?.[0] ?? null)
-                }
+                type="text"
+                aria-label="Speech text for Vizij lipsync"
+                value={speechText}
+                onChange={(e) => setSpeechText(e.target.value)}
+                className="w-full px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
               />
             </label>
-          </div>
-          <div className="flex flex-wrap items-center gap-1">
-            {PEERBOTS_EMOTIONS.map((emo) => (
-              <button
-                key={emo}
-                type="button"
-                onClick={() =>
-                  store.setState({
-                    lastMessage: {
-                      ...store.getState().lastMessage,
-                      title: emo,
-                      emotion: emo,
-                    },
-                  })
-                }
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-teal-600 text-white transition-colors cursor-pointer"
-              >
-                {emo}
-              </button>
-            ))}
             <button
               type="button"
-              onClick={() => store.getState().triggerBlink()}
+              onClick={handleSpeak}
+              className="px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white font-medium transition-colors cursor-pointer"
+            >
+              Speak (TTS + Visemes)
+            </button>
+            <button
+              type="button"
+              onClick={handleSilentLipsyncDemo}
+              className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors cursor-pointer"
+            >
+              Lipsync Demo (Silent)
+            </button>
+            <button
+              type="button"
+              onClick={handleStopSpeech}
               className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
             >
-              Blink
+              Stop
             </button>
           </div>
         </div>

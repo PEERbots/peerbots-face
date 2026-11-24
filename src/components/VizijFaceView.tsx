@@ -331,23 +331,47 @@ function VizijPoseSetter() {
   );
 
   useEffect(() => {
-    if (!spokenVisemes || !isReady || availableKeys.size === 0) return;
+    if (!isReady || availableKeys.size === 0) return;
+
+    if (!spokenVisemes || spokenVisemes.length === 0) {
+      void expressViseme("sil", 0.08);
+      return;
+    }
+
     let cancelled = false;
     async function runVisemes() {
       if (!spokenVisemes) return;
       let prevViseme: PollyViseme | undefined;
+      let prevTime = 0;
       for (const viseme of spokenVisemes) {
         if (cancelled) return;
         const val = viseme.value as PollyViseme;
-        await expressViseme(val, viseme.time, prevViseme);
+        const deltaSec = Math.max(
+          0.04,
+          Math.min(0.28, viseme.time - prevTime),
+        );
+        prevTime = viseme.time;
+        await expressViseme(val, deltaSec, prevViseme);
         prevViseme = val;
+      }
+      if (!cancelled) {
+        await expressViseme("sil", 0.08, prevViseme);
       }
     }
     void runVisemes();
     return () => {
       cancelled = true;
+      void expressViseme("sil", 0.06);
     };
   }, [spokenVisemes, isReady, availableKeys, expressViseme]);
+
+  // Ensure mouth returns cleanly to closed (sil) when speech finishes
+  useEffect(() => {
+    if (!isReady || availableKeys.size === 0) return;
+    if (!isSpeaking) {
+      void expressViseme("sil", 0.08);
+    }
+  }, [isSpeaking, isReady, availableKeys, expressViseme]);
 
   return null;
 }
