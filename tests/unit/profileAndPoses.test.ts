@@ -13,16 +13,12 @@ import {
   createPeerbotsFaceStore,
   defaultFaceSettings,
   inspectGlbProfileConnection,
-  mapVisemeToStandardViseme,
-  resolveConversationGazeOffset,
   resolveTargetPose,
-  resolveVizijGlbSource,
   stepFacePose,
   type VectorFaceStyleId,
 } from "../../src";
 import {
   DARK_VISOR_HEX,
-  PULSE_VISOR_HEX,
   drawVectorEyes,
   drawVectorMouth,
   resolveAvatarBackgroundHex,
@@ -53,7 +49,7 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
     expect(peerbotsProfileJson.keys.map((k) => k.path)).toEqual(
       Object.values(PEERBOTS_PROFILE_KEYS),
     );
-    expect(peerbotsProfileJson.keys).toHaveLength(21);
+    expect(peerbotsProfileJson.keys).toHaveLength(19);
   });
 
   it("inspects standard vizij-face + peerbots-face GLB paths and reports full auto-connection", () => {
@@ -75,6 +71,7 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
       "rig/hugo/peerbots/color/r",
       "rig/hugo/peerbots/color/g",
       "rig/hugo/peerbots/color/b",
+      "rig/hugo/peerbots/speech/speaking",
       "rig/hugo/peerbots/speech/amplitude",
       "rig/hugo/peerbots/scene/scale",
       "rig/hugo/peerbots/scene/offset/x",
@@ -128,7 +125,7 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
     });
   });
 
-  it("projects store state into canonical vizij-face + peerbots-face control values", () => {
+  it("projects store state into canonical peerbots-face + vizij-face control values", () => {
     const values = buildProfileControlValues({
       message: {
         ...DEFAULT_FACE_MESSAGE,
@@ -145,19 +142,19 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
       },
       isSpeaking: true,
       currentAmplitude: 0.6,
-      conversationState: "thinking",
       facsOverrides: { brow_inner_up: 0.4 },
       blinkLevel: 0.25,
     });
 
+    expect(values[PEERBOTS_PROFILE_KEYS.expressionHappy]).toBeCloseTo(0.75);
     expect(values[VIZIJ_STANDARD_KEYS.expression("happy")]).toBeCloseTo(0.75);
     expect(values[VIZIJ_STANDARD_KEYS.expression("sad")]).toBe(0);
     expect(values[VIZIJ_STANDARD_KEYS.gazeTargetX]).toBeCloseTo(0.75);
     expect(values[VIZIJ_STANDARD_KEYS.gazeTargetY]).toBeCloseTo(0.25);
     expect(values[VIZIJ_STANDARD_KEYS.gazeTargetWeight]).toBeCloseTo(0.8);
     expect(values[VIZIJ_STANDARD_KEYS.blink]).toBeCloseTo(0.25);
+    expect(values[PEERBOTS_PROFILE_KEYS.speechSpeaking]).toBe(1);
     expect(values[VIZIJ_STANDARD_KEYS.conversationSpeaking]).toBe(1);
-    expect(values[VIZIJ_STANDARD_KEYS.conversationThinking]).toBe(1);
     expect(values[VIZIJ_STANDARD_KEYS.facs("brow_inner_up")]).toBeCloseTo(0.4);
     expect(values[PEERBOTS_PROFILE_KEYS.speechAmplitude]).toBeCloseTo(0.6);
     expect(values[PEERBOTS_PROFILE_KEYS.sceneScale]).toBe(1.5);
@@ -167,14 +164,11 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
     expect(values[PEERBOTS_PROFILE_KEYS.colorR]).toBeGreaterThan(0.5);
   });
 
-  it("supports triggerBlink, conversationState, extendedExpression, facsOverrides, and gaze weight in the store", () => {
+  it("supports triggerBlink, extendedExpression, facsOverrides, and gaze weight in the store", () => {
     const store = createPeerbotsFaceStore({ isSilent: true });
     expect(store.getState().blinkNonce).toBe(0);
     store.getState().triggerBlink();
     expect(store.getState().blinkNonce).toBe(1);
-
-    store.getState().setConversationState("listening");
-    expect(store.getState().conversationState).toBe("listening");
 
     store.getState().setExtendedExpression("skeptical");
     expect(store.getState().extendedExpression).toBe("skeptical");
@@ -187,71 +181,11 @@ describe("Peerbots Vizij Profile (peerbots-face.v1.json)", () => {
 
     store.getState().setGaze({ x: 0.25, y: -0.25, weight: 0.9 });
     expect(store.getState().gaze).toEqual({ x: 0.25, y: -0.25, weight: 0.9 });
-
-    const report = inspectGlbProfileConnection([
-      "rig/hugo/peerbots/expression/happy",
-      "rig/hugo/peerbots/color/r",
-      "rig/hugo/peerbots/color/g",
-      "rig/hugo/peerbots/color/b",
-      "rig/hugo/peerbots/scene/rotation",
-    ]);
-    store.getState().setVizijConnectionReport(report);
-    expect(store.getState().vizijConnectionReport?.sceneTransform.rotation).toBe(
-      true,
-    );
-    // Switching face clears previous GLB report
-    store.getState().setFaceByName("Robotic");
-    expect(store.getState().vizijConnectionReport).toBeNull();
-  });
-
-  it("resolves Vizij 1.0 glb and legacy assetBundle sources and maps Polly visemes to Oculus 15-viseme standard", () => {
-    expect(
-      resolveVizijGlbSource({
-        kind: "Vizij",
-        name: "V1",
-        glb: "/faces/hugo.glb",
-      }),
-    ).toBe("/faces/hugo.glb");
-
-    expect(
-      resolveVizijGlbSource({
-        kind: "Vizij",
-        name: "Legacy",
-        assetBundle: {
-          namespace: "hugo",
-          glb: { kind: "url", src: "/legacy/hugo.glb" },
-        },
-      }),
-    ).toBe("/legacy/hugo.glb");
-
-    expect(
-      resolveVizijGlbSource({
-        kind: "Vizij",
-        name: "Empty",
-      }),
-    ).toBeNull();
-
-    expect(mapVisemeToStandardViseme("a")).toBe("aa");
-    expect(mapVisemeToStandardViseme("p")).toBe("PP");
-    expect(mapVisemeToStandardViseme("f")).toBe("FF");
-    expect(mapVisemeToStandardViseme("T")).toBe("TH");
-    expect(mapVisemeToStandardViseme("t")).toBe("DD");
-    expect(mapVisemeToStandardViseme("k")).toBe("kk");
-    expect(mapVisemeToStandardViseme("S")).toBe("CH");
-    expect(mapVisemeToStandardViseme("s")).toBe("SS");
-    expect(mapVisemeToStandardViseme("l")).toBe("nn");
-    expect(mapVisemeToStandardViseme("r")).toBe("RR");
-    expect(mapVisemeToStandardViseme("e")).toBe("E");
-    expect(mapVisemeToStandardViseme("i")).toBe("ih");
-    expect(mapVisemeToStandardViseme("o")).toBe("oh");
-    expect(mapVisemeToStandardViseme("u")).toBe("ou");
-    expect(mapVisemeToStandardViseme("sil")).toBe("sil");
-    expect(mapVisemeToStandardViseme("unknown")).toBe("sil");
   });
 });
 
-describe("Parametric FacePose solver & 8 PixiJS vector face styles", () => {
-  it("resolves poses across all emotions, expressivity levels, conversation states, and FACS overrides", () => {
+describe("Parametric FacePose solver & 7 PixiJS vector face styles", () => {
+  it("resolves eye poses across all emotions, expressivity levels, and FACS overrides", () => {
     for (const emo of PEERBOTS_EMOTIONS) {
       const full = resolveTargetPose(emo, { expressivity: 1 });
       expect(full).toEqual(EMOTION_POSES[emo]);
@@ -260,26 +194,15 @@ describe("Parametric FacePose solver & 8 PixiJS vector face styles", () => {
       expect(zero).toEqual(NEUTRAL_POSE);
     }
 
-    const listening = resolveTargetPose("Neutral", {
-      conversationState: "listening",
-    });
-    expect(listening.eyeHeight).toBeGreaterThan(NEUTRAL_POSE.eyeHeight);
-
-    const thinking = resolveTargetPose("Neutral", {
-      conversationState: "thinking",
-    });
-    expect(thinking.topLid).toBeGreaterThan(NEUTRAL_POSE.topLid);
-
     const facsPose = resolveTargetPose("Neutral", {
       facsOverrides: {
         brow_inner_up: 0.8,
-        mouth_smile_left: 0.9,
-        mouth_smile_right: 0.9,
-        jaw_open: 0.6,
+        eye_wide_left: 0.5,
+        eye_wide_right: 0.5,
       },
     });
-    expect(facsPose.mouthCurve).toBeGreaterThan(NEUTRAL_POSE.mouthCurve);
-    expect(facsPose.mouthOpen).toBeCloseTo(0.6);
+    expect(facsPose.eyeHeight).toBeGreaterThan(NEUTRAL_POSE.eyeHeight);
+    expect(facsPose.browY).toBeLessThan(NEUTRAL_POSE.browY);
 
     const extended = resolveTargetPose("Neutral", {
       extendedExpression: "excited",
@@ -287,37 +210,23 @@ describe("Parametric FacePose solver & 8 PixiJS vector face styles", () => {
     expect(extended.cheekAlpha).toBeGreaterThan(0.9);
   });
 
-  it("smoothly interpolates between poses and computes thinking gaze aversion", () => {
+  it("smoothly interpolates between eye poses", () => {
     const mid = stepFacePose(NEUTRAL_POSE, EMOTION_POSES.Surprised, 0.1, 10);
     expect(mid.eyeHeight).toBeGreaterThan(NEUTRAL_POSE.eyeHeight);
     expect(mid.eyeHeight).toBeLessThan(EMOTION_POSES.Surprised.eyeHeight);
 
     const frozen = stepFacePose(NEUTRAL_POSE, EMOTION_POSES.Happy, 0, 10);
     expect(frozen).toEqual(NEUTRAL_POSE);
-
-    const idleGaze = resolveConversationGazeOffset("idle", 1.0);
-    expect(idleGaze).toEqual({ x: 0, y: 0 });
-
-    const thinkGaze = resolveConversationGazeOffset("thinking", 1.0);
-    expect(thinkGaze.x).toBeGreaterThan(0.2);
-    expect(thinkGaze.y).toBeLessThan(-0.1);
   });
 
-  it("resolves single-color roles and renders eyes & mouths for all 8 vector presets", () => {
-    expect(resolveAvatarBackgroundHex("#FF0000", "hugo", "background")).toBe(
-      "#FF0000",
-    );
-    expect(resolveAvatarBackgroundHex("#FF0000", "dash", "accent")).toBe(
-      DARK_VISOR_HEX,
-    );
-    expect(resolveAvatarBackgroundHex("#FF0000", "pulse", "accent")).toBe(
-      PULSE_VISOR_HEX,
-    );
+  it("resolves single-color roles and renders eyes & speech-only mouths for all 7 vector presets", () => {
+    expect(resolveAvatarBackgroundHex("#FF0000", "background")).toBe("#FF0000");
+    expect(resolveAvatarBackgroundHex("#FF0000", "accent")).toBe(DARK_VISOR_HEX);
 
     expect(resolveVectorInkHex("#000000", "dash", "accent")).toBe("#38BDF8");
-    expect(resolveVectorInkHex("#000000", "pulse", "accent")).toBe("#34D399");
     expect(resolveVectorInkHex("#000000", "pixel", "accent")).toBe("#FBBF24");
     expect(resolveVectorInkHex("#000000", "hugo", "background")).toBe("#F8FAFC");
+    expect(resolveVectorInkHex("#ABE3FA", "hugo", "background")).toBe("#000000");
     expect(resolveVectorInkHex("#38BDF8", "dash", "accent")).toBe("#38BDF8");
 
     const styles: VectorFaceStyleId[] = [
@@ -326,19 +235,16 @@ describe("Parametric FacePose solver & 8 PixiJS vector face styles", () => {
       "pebble",
       "dash",
       "orbit",
-      "pulse",
       "pixel",
       "slate",
     ];
 
     for (const style of styles) {
       const colorRole =
-        style === "dash" || style === "pulse" || style === "pixel"
-          ? "accent"
-          : "background";
-      const bgColor = resolveAvatarBackgroundHex("#ABE3FA", style, colorRole);
+        style === "dash" || style === "pixel" ? "accent" : "background";
+      const bgColor = resolveAvatarBackgroundHex("#ABE3FA", colorRole);
 
-      for (const emo of ["Neutral", "Happy", "Sad", "Surprised"] as const) {
+      for (const emo of PEERBOTS_EMOTIONS) {
         const gEyes = createFakeGraphics();
         drawVectorEyes({
           graphics: gEyes,
@@ -357,37 +263,33 @@ describe("Parametric FacePose solver & 8 PixiJS vector face styles", () => {
           showCheeks: true,
         });
         expect(gEyes.clear).toHaveBeenCalledTimes(1);
-
-        const gMouthIdle = createFakeGraphics();
-        drawVectorMouth({
-          graphics: gMouthIdle,
-          style,
-          pose: EMOTION_POSES[emo],
-          scale: 0.75,
-          talking: false,
-          talkingScale: 0,
-          talkingTime: 0,
-          bgColor,
-          themeColor: "#ABE3FA",
-          colorRole,
-        });
-        expect(gMouthIdle.clear).toHaveBeenCalledTimes(1);
-
-        const gMouthTalk = createFakeGraphics();
-        drawVectorMouth({
-          graphics: gMouthTalk,
-          style,
-          pose: EMOTION_POSES[emo],
-          scale: 0.75,
-          talking: true,
-          talkingScale: 0.85,
-          talkingTime: 1200,
-          bgColor,
-          themeColor: "#ABE3FA",
-          colorRole,
-        });
-        expect(gMouthTalk.clear).toHaveBeenCalledTimes(1);
       }
+
+      const gMouthIdle = createFakeGraphics();
+      drawVectorMouth({
+        graphics: gMouthIdle,
+        style,
+        scale: 0.75,
+        talking: false,
+        talkingScale: 0,
+        talkingTime: 0,
+        themeColor: "#ABE3FA",
+        colorRole,
+      });
+      expect(gMouthIdle.clear).toHaveBeenCalledTimes(1);
+
+      const gMouthTalk = createFakeGraphics();
+      drawVectorMouth({
+        graphics: gMouthTalk,
+        style,
+        scale: 0.75,
+        talking: true,
+        talkingScale: 0.85,
+        talkingTime: 1200,
+        themeColor: "#ABE3FA",
+        colorRole,
+      });
+      expect(gMouthTalk.clear).toHaveBeenCalledTimes(1);
     }
   });
 });

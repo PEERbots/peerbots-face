@@ -10,14 +10,13 @@ import {
   type PeerbotsColor,
   type PeerbotsEmotion,
 } from "../types/face";
-import type { PeerbotsConversationState } from "../types/profile";
 import { FaceView } from "./FaceView";
 
 interface PlaygroundArgs {
   faceName: string;
   emotion: PeerbotsEmotion;
   color: PeerbotsColor;
-  conversationState: PeerbotsConversationState;
+  isSpeaking: boolean;
   expressivity: number;
   zoom: number;
   rotation: number;
@@ -51,23 +50,14 @@ function InteractiveFaceStory(args: PlaygroundArgs) {
     store.setState({
       lastMessage: {
         title: args.emotion,
-        speech:
-          args.conversationState === "speaking"
-            ? "Hello! Testing smooth expressions."
-            : "",
+        speech: args.isSpeaking ? "Hello! Testing smooth expressions." : "",
         color: args.color,
         emotion: args.emotion,
       },
+      isSpeaking: args.isSpeaking,
+      currentAmplitude: args.isSpeaking ? 0.65 : 0,
     });
-  }, [store, args.emotion, args.color, args.conversationState]);
-
-  useEffect(() => {
-    store.getState().setConversationState(args.conversationState);
-    store.setState({
-      isSpeaking: args.conversationState === "speaking",
-      currentAmplitude: args.conversationState === "speaking" ? 0.65 : 0,
-    });
-  }, [store, args.conversationState]);
+  }, [store, args.emotion, args.color, args.isSpeaking]);
 
   useEffect(() => {
     store.getState().setFaceSettings({
@@ -189,10 +179,9 @@ const meta: Meta<PlaygroundArgs> = {
       options: [...PEERBOTS_COLORS],
       description: "Single Peerbots theme color",
     },
-    conversationState: {
-      control: "inline-radio",
-      options: ["idle", "listening", "thinking", "speaking"],
-      description: "HRI conversation turn-taking state",
+    isSpeaking: {
+      control: "boolean",
+      description: "Toggle between idle and speaking",
     },
     expressivity: {
       control: { type: "range", min: 0, max: 1, step: 0.05 },
@@ -212,7 +201,7 @@ const meta: Meta<PlaygroundArgs> = {
     faceName: "Hugo",
     emotion: "Happy",
     color: "Light Blue",
-    conversationState: "idle",
+    isSpeaking: false,
     expressivity: 1,
     zoom: 1,
     rotation: 0,
@@ -355,30 +344,6 @@ export const DashDarkVisorAccent: Story = {
   },
 };
 
-export const PulseSleekAbstract: Story = {
-  render: () => {
-    const pulse = builtInFaces.find((f) => f.name === "Pulse") ?? builtInFaces[0];
-    const store = createPeerbotsFaceStore({
-      isSilent: true,
-      initialFace: pulse,
-      initialMessage: {
-        title: "Listening",
-        speech: "Go ahead, I am listening.",
-        color: "Green",
-        emotion: "Neutral",
-      },
-    });
-    store.getState().setConversationState("listening");
-    return (
-      <FaceStoreProvider store={store}>
-        <div className="w-full h-[420px]">
-          <FaceView />
-        </div>
-      </FaceStoreProvider>
-    );
-  },
-};
-
 export const SlateCalmArchitectural: Story = {
   render: () => {
     const slate = builtInFaces.find((f) => f.name === "Slate") ?? builtInFaces[0];
@@ -390,32 +355,6 @@ export const SlateCalmArchitectural: Story = {
         speech: "Let us work through this step by step.",
         color: "Grey",
         emotion: "Neutral",
-      },
-    });
-    return (
-      <FaceStoreProvider store={store}>
-        <div className="w-full h-[420px]">
-          <FaceView />
-        </div>
-      </FaceStoreProvider>
-    );
-  },
-};
-
-export const HugoVizijExpressive: Story = {
-  render: () => {
-    const hugoVizij =
-      availableFaces.find(
-        (f) => f.kind === "Vizij" && f.name === "Hugo - Expressive",
-      ) ?? builtInFaces[0];
-    const store = createPeerbotsFaceStore({
-      isSilent: true,
-      initialFace: hugoVizij,
-      initialMessage: {
-        title: "Hello",
-        speech: "Hello from Vizij Hugo!",
-        color: "Light Blue",
-        emotion: "Happy",
       },
     });
     return (

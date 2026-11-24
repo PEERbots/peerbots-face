@@ -65,7 +65,6 @@ function VizijPoseSetter() {
   const selectedFace = useFaceStore((state) => state.selectedFace);
   const gaze = useFaceStore((state) => state.gaze);
   const blinkNonce = useFaceStore((state) => state.blinkNonce);
-  const conversationState = useFaceStore((state) => state.conversationState);
   const extendedExpression = useFaceStore((state) => state.extendedExpression);
   const facsOverrides = useFaceStore((state) => state.facsOverrides);
   const isSpeaking = useFaceStore((state) => state.isSpeaking);
@@ -133,7 +132,6 @@ function VizijPoseSetter() {
       settings,
       isSpeaking,
       currentAmplitude,
-      conversationState,
       extendedExpression,
       facsOverrides,
     });
@@ -208,7 +206,6 @@ function VizijPoseSetter() {
     settings,
     isSpeaking,
     currentAmplitude,
-    conversationState,
     extendedExpression,
     facsOverrides,
     selectedFace?.kind,

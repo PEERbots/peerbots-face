@@ -40,10 +40,8 @@ export const PEERBOTS_PROFILE_KEYS = {
   colorR: "peerbots/color/r",
   colorG: "peerbots/color/g",
   colorB: "peerbots/color/b",
+  speechSpeaking: "peerbots/speech/speaking",
   speechAmplitude: "peerbots/speech/amplitude",
-  conversationSpeaking: "peerbots/conversation/speaking",
-  conversationUserSpeaking: "peerbots/conversation/user_speaking",
-  conversationThinking: "peerbots/conversation/thinking",
   sceneScale: "peerbots/scene/scale",
   sceneOffsetX: "peerbots/scene/offset/x",
   sceneOffsetY: "peerbots/scene/offset/y",
@@ -55,7 +53,7 @@ export const PEERBOTS_FACE_PROFILE: VizijProfileDefinition = {
   version: "v1",
   title: "Peerbots Face",
   description:
-    "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech amplitude, conversation state, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
+    "Self-contained Peerbots face control profile (emotions, gaze, blink, color, speech state/amplitude, and scene framing). Designed to work standalone or composed alongside Vizij's vizij-face standard.",
   scope: "face",
   keys: [
     {
@@ -176,7 +174,7 @@ export const PEERBOTS_FACE_PROFILE: VizijProfileDefinition = {
       meta: { tier: "appearance" },
     },
     {
-      path: PEERBOTS_PROFILE_KEYS.speechAmplitude,
+      path: PEERBOTS_PROFILE_KEYS.speechSpeaking,
       kind: "input",
       value_type: "f32",
       min: 0.0,
@@ -185,31 +183,13 @@ export const PEERBOTS_FACE_PROFILE: VizijProfileDefinition = {
       meta: { tier: "viseme" },
     },
     {
-      path: PEERBOTS_PROFILE_KEYS.conversationSpeaking,
+      path: PEERBOTS_PROFILE_KEYS.speechAmplitude,
       kind: "input",
       value_type: "f32",
       min: 0.0,
       max: 1.0,
       default_value: { f32: 0.0 },
-      meta: { tier: "conversation" },
-    },
-    {
-      path: PEERBOTS_PROFILE_KEYS.conversationUserSpeaking,
-      kind: "input",
-      value_type: "f32",
-      min: 0.0,
-      max: 1.0,
-      default_value: { f32: 0.0 },
-      meta: { tier: "conversation" },
-    },
-    {
-      path: PEERBOTS_PROFILE_KEYS.conversationThinking,
-      kind: "input",
-      value_type: "f32",
-      min: 0.0,
-      max: 1.0,
-      default_value: { f32: 0.0 },
-      meta: { tier: "conversation" },
+      meta: { tier: "viseme" },
     },
     {
       path: PEERBOTS_PROFILE_KEYS.sceneScale,
@@ -481,12 +461,8 @@ export function inspectGlbProfileConnection(
     normalized.has(VIZIJ_STANDARD_KEYS.leftTopLid);
 
   const hasConversation =
-    normalized.has(PEERBOTS_PROFILE_KEYS.conversationSpeaking) ||
-    normalized.has(PEERBOTS_PROFILE_KEYS.conversationUserSpeaking) ||
-    normalized.has(PEERBOTS_PROFILE_KEYS.conversationThinking) ||
-    normalized.has(VIZIJ_STANDARD_KEYS.conversationSpeaking) ||
-    normalized.has(VIZIJ_STANDARD_KEYS.conversationUserSpeaking) ||
-    normalized.has(VIZIJ_STANDARD_KEYS.conversationThinking);
+    normalized.has(PEERBOTS_PROFILE_KEYS.speechSpeaking) ||
+    normalized.has(VIZIJ_STANDARD_KEYS.conversationSpeaking);
 
   const hasScale =
     normalized.has(PEERBOTS_PROFILE_KEYS.sceneScale) ||
@@ -552,7 +528,6 @@ export interface ProfileControlInput {
   settings: FaceSettings;
   isSpeaking: boolean;
   currentAmplitude: number;
-  conversationState?: PeerbotsConversationState;
   extendedExpression?: VizijStandardExpression | null;
   facsOverrides?: FacsOverrides;
   blinkLevel?: number;
@@ -581,7 +556,6 @@ export function buildProfileControlValues(
     settings,
     isSpeaking,
     currentAmplitude,
-    conversationState = "idle",
     extendedExpression = null,
     facsOverrides,
     blinkLevel = 0,
@@ -635,18 +609,10 @@ export function buildProfileControlValues(
   values[VIZIJ_STANDARD_KEYS.blink] = clampedBlink;
   values[VIZIJ_STANDARD_KEYS.lipsyncGain] = Math.max(0, settings.amplitudeGain ?? 1);
 
-  // Conversation state (both Peerbots + Vizij standard keys)
-  const effectiveSpeaking = isSpeaking || conversationState === "speaking";
-  const speakingVal = effectiveSpeaking ? 1 : 0;
-  const listeningVal = conversationState === "listening" ? 1 : 0;
-  const thinkingVal = conversationState === "thinking" ? 1 : 0;
-
-  values[PEERBOTS_PROFILE_KEYS.conversationSpeaking] = speakingVal;
-  values[PEERBOTS_PROFILE_KEYS.conversationUserSpeaking] = listeningVal;
-  values[PEERBOTS_PROFILE_KEYS.conversationThinking] = thinkingVal;
+  // Speaking state (idle vs speaking)
+  const speakingVal = isSpeaking ? 1 : 0;
+  values[PEERBOTS_PROFILE_KEYS.speechSpeaking] = speakingVal;
   values[VIZIJ_STANDARD_KEYS.conversationSpeaking] = speakingVal;
-  values[VIZIJ_STANDARD_KEYS.conversationUserSpeaking] = listeningVal;
-  values[VIZIJ_STANDARD_KEYS.conversationThinking] = thinkingVal;
 
   // Optional FACS muscle overrides
   if (facsOverrides) {
