@@ -7,6 +7,8 @@ import {
   PEERBOTS_EMOTIONS,
   availableFaces,
   builtInFaces,
+  createCustomVizijFace,
+  includedVizijFaces,
   type PeerbotsColor,
   type PeerbotsEmotion,
 } from "../types/face";
@@ -211,8 +213,164 @@ const meta: Meta<PlaygroundArgs> = {
 export default meta;
 type Story = StoryObj<PlaygroundArgs>;
 
+const VIZIJ_FACE_NAMES = includedVizijFaces
+  .filter((f) => f.name !== "Custom Face")
+  .map((f) => f.name);
+
+function VizijFacePlayground(args: PlaygroundArgs) {
+  const initialVizij =
+    includedVizijFaces.find((f) => f.name === args.faceName) ??
+    includedVizijFaces[0];
+
+  const [selectedVizijName, setSelectedVizijName] = useState(initialVizij.name);
+  const [store] = useState(() =>
+    createPeerbotsFaceStore({
+      isSilent: true,
+      initialFace: initialVizij,
+      initialMessage: {
+        title: args.emotion,
+        speech: "",
+        color: args.color,
+        emotion: args.emotion,
+      },
+    }),
+  );
+
+  useEffect(() => {
+    if (VIZIJ_FACE_NAMES.includes(args.faceName)) {
+      setSelectedVizijName(args.faceName);
+      store.getState().setFaceByName(args.faceName);
+    }
+  }, [store, args.faceName]);
+
+  useEffect(() => {
+    store.setState({
+      lastMessage: {
+        title: args.emotion,
+        speech: args.isSpeaking ? "Hello! Testing Vizij face rig." : "",
+        color: args.color,
+        emotion: args.emotion,
+      },
+      isSpeaking: args.isSpeaking,
+      currentAmplitude: args.isSpeaking ? 0.65 : 0,
+    });
+  }, [store, args.emotion, args.color, args.isSpeaking]);
+
+  useEffect(() => {
+    store.getState().setFaceSettings({
+      zoom: args.zoom,
+      rotation: args.rotation,
+      vizijSettings: { faceExpressivity: args.expressivity },
+    });
+  }, [store, args.zoom, args.rotation, args.expressivity]);
+
+  const handleSelectVizij = (name: string) => {
+    setSelectedVizijName(name);
+    store.getState().setFaceByName(name);
+  };
+
+  const handleUploadGlb = (file: File | null) => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setSelectedVizijName(file.name);
+    store.getState().setFace(createCustomVizijFace(url));
+  };
+
+  return (
+    <FaceStoreProvider store={store}>
+      <div className="flex flex-col w-full h-[560px] bg-slate-950">
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-slate-900 text-slate-100 text-xs border-b border-slate-800"
+          role="toolbar"
+          aria-label="Vizij face selector and emotion controls"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5">
+              <span className="text-slate-400">Vizij Face:</span>
+              <select
+                aria-label="Select Vizij face"
+                value={
+                  VIZIJ_FACE_NAMES.includes(selectedVizijName)
+                    ? selectedVizijName
+                    : ""
+                }
+                onChange={(e) => handleSelectVizij(e.target.value)}
+                className="px-2 py-1 rounded bg-slate-800 text-white border border-slate-700"
+              >
+                {VIZIJ_FACE_NAMES.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer">
+              Upload .glb
+              <input
+                type="file"
+                accept=".glb"
+                aria-label="Upload custom Vizij GLB file"
+                className="sr-only"
+                onChange={(e) =>
+                  handleUploadGlb(e.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {PEERBOTS_EMOTIONS.map((emo) => (
+              <button
+                key={emo}
+                type="button"
+                onClick={() =>
+                  store.setState({
+                    lastMessage: {
+                      ...store.getState().lastMessage,
+                      title: emo,
+                      emotion: emo,
+                    },
+                  })
+                }
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-teal-600 text-white transition-colors cursor-pointer"
+              >
+                {emo}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => store.getState().triggerBlink()}
+              className="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors cursor-pointer"
+            >
+              Blink
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 min-h-0">
+          <FaceView />
+        </div>
+      </div>
+    </FaceStoreProvider>
+  );
+}
+
 export const InteractivePlayground: Story = {
   render: (args) => <InteractiveFaceStory {...args} />,
+};
+
+export const VizijPlayground: Story = {
+  args: {
+    faceName: "Hugo - Expressive",
+    emotion: "Neutral",
+    color: "Light Blue",
+  },
+  argTypes: {
+    faceName: {
+      control: "select",
+      options: VIZIJ_FACE_NAMES,
+      description: "Vizij GLB face preset to display",
+    },
+  },
+  render: (args) => <VizijFacePlayground {...args} />,
 };
 
 export const AllEmotionsForFace: Story = {

@@ -368,6 +368,8 @@ export function VizijFaceView({ labels }: VizijFaceViewProps = {}) {
   }
 
   const glbSource = resolveVizijGlbSource(selectedFace);
+  const glbKey =
+    typeof glbSource === "string" ? glbSource : `${selectedFace.name}-blob`;
   const backdropColor =
     connectionReport && !connectionReport.color
       ? (color_mapping[lastMessage.color] ?? color_mapping["Light Blue"])
@@ -385,7 +387,7 @@ export function VizijFaceView({ labels }: VizijFaceViewProps = {}) {
       {glbSource ? (
         <>
           <VizijCanvas />
-          <VizijRuntimeProvider glb={glbSource}>
+          <VizijRuntimeProvider key={glbKey} glb={glbSource}>
             <Suspense fallback={<VizijFallback labels={uiLabels} />}>
               <VizijRuntimeFace
                 className="pbf:w-full pbf:h-full"

@@ -390,6 +390,30 @@ export function createIncludedVizijFaces(assetBaseUrl?: string): VizijFace[] {
         },
       },
     },
+    {
+      kind: "Vizij",
+      name: "Dash - Vizij",
+      assetBundle: {
+        namespace: "dash",
+        glb: {
+          kind: "url",
+          src: `${base}/Vizij/Dash.glb`,
+          aggressiveImport: true,
+        },
+      },
+    },
+    {
+      kind: "Vizij",
+      name: "Orbit - Vizij",
+      assetBundle: {
+        namespace: "orbit",
+        glb: {
+          kind: "url",
+          src: `${base}/Vizij/Orbit.glb`,
+          aggressiveImport: true,
+        },
+      },
+    },
     createCustomVizijFace(""),
   ];
 }
