@@ -48,14 +48,16 @@ function InteractiveFaceStory(args: PlaygroundArgs) {
   }, [store, args.faceName]);
 
   useEffect(() => {
-    store.getState().setLastMessage({
-      title: args.emotion,
-      speech:
-        args.conversationState === "speaking"
-          ? "Hello! Testing smooth expressions."
-          : "",
-      color: args.color,
-      emotion: args.emotion,
+    store.setState({
+      lastMessage: {
+        title: args.emotion,
+        speech:
+          args.conversationState === "speaking"
+            ? "Hello! Testing smooth expressions."
+            : "",
+        color: args.color,
+        emotion: args.emotion,
+      },
     });
   }, [store, args.emotion, args.color, args.conversationState]);
 
@@ -89,10 +91,12 @@ function InteractiveFaceStory(args: PlaygroundArgs) {
                 key={emo}
                 type="button"
                 onClick={() =>
-                  store.getState().setLastMessage({
-                    ...store.getState().lastMessage,
-                    title: emo,
-                    emotion: emo,
+                  store.setState({
+                    lastMessage: {
+                      ...store.getState().lastMessage,
+                      title: emo,
+                      emotion: emo,
+                    },
                   })
                 }
                 className="px-2.5 py-1 rounded bg-slate-800 hover:bg-teal-600 text-white transition-colors cursor-pointer"
