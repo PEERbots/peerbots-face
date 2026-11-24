@@ -105,7 +105,7 @@ export function StaticFaceFallback({
                   alt=""
                   className="pbf:w-20 pbf:h-20 pbf:md:w-28 pbf:md:h-28 pbf:object-contain"
                 />
-                {selectedFace.cheeks &&
+                {selectedFace.cheeks?.kind === "texture" &&
                   pixiSettings?.cheekDisplay !== "none" && (
                     <img
                       src={selectedFace.cheeks.path}
@@ -120,7 +120,7 @@ export function StaticFaceFallback({
                   alt=""
                   className="pbf:w-20 pbf:h-20 pbf:md:w-28 pbf:md:h-28 pbf:object-contain"
                 />
-                {selectedFace.cheeks &&
+                {selectedFace.cheeks?.kind === "texture" &&
                   pixiSettings?.cheekDisplay !== "none" && (
                     <img
                       src={selectedFace.cheeks.path}

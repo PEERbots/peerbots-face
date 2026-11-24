@@ -2,6 +2,8 @@ import { useRef, useMemo, useCallback } from "react";
 import { Graphics } from "pixi.js";
 import { useTick, useExtend } from "@pixi/react";
 import { useFaceStore } from "../store/FaceStoreContext";
+import { color_mapping } from "../helpers/color_mappers";
+import { drawVectorMouth } from "./vectorFaces/drawVectorFace";
 
 const ZIG_ZAG_POINTS = [
   { x: 0, y: -10 },
@@ -41,13 +43,27 @@ export function FaceMouth({
 
   const talking = useFaceStore((state) => state.isSpeaking);
   const face = useFaceStore((state) => state.selectedFace);
-  const pixiSettings = useFaceStore((state) => state.faceSettings.pixiSettings);
+  const message = useFaceStore((state) => state.lastMessage);
+  const pixiSettings = useFaceStore(
+    (state) => state.faceSettings.pixiSettings,
+  );
   const currentAmplitude = useFaceStore((state) => state.currentAmplitude);
   const amplitudeData = useFaceStore((state) => state.amplitudeData);
   const speechStartTime = useFaceStore((state) => state.speechStartTime);
 
-  const talkingScaleRef = useRef<number>(1);
+  const talkingScaleRef = useRef<number>(0);
   const talkingTimeRef = useRef<number>(0);
+
+  const isVectorAvatar =
+    face?.kind === "PixiFace" &&
+    face.type === "avatar" &&
+    face.eyes.kind === "vector";
+  const vectorStyle =
+    isVectorAvatar && face.eyes.kind === "vector" ? face.eyes.style : null;
+  const colorRole =
+    face?.kind === "PixiFace" && face.type === "avatar"
+      ? (face.colorRole ?? "background")
+      : "background";
 
   const talkingShape = useMemo(
     () =>
@@ -56,6 +72,9 @@ export function FaceMouth({
         : "Ellipse",
     [face],
   );
+
+  const themeHex =
+    color_mapping[message?.color ?? "Light Blue"] ?? color_mapping["Light Blue"];
 
   const graphicsRef = useRef<Graphics>(null);
 
@@ -73,6 +92,21 @@ export function FaceMouth({
 
   const drawMouth = useCallback(
     (graphics: Graphics) => {
+      if (vectorStyle) {
+        drawVectorMouth({
+          graphics,
+          style: vectorStyle,
+          mouthShape: talkingShape,
+          scale,
+          talking,
+          talkingScale: talkingScaleRef.current,
+          talkingTime: talkingTimeRef.current,
+          themeColor: themeHex,
+          colorRole,
+        });
+        return;
+      }
+
       graphics.clear();
       const talkingScale = talkingScaleRef.current;
       const talkingTime = talkingTimeRef.current;
@@ -155,7 +189,7 @@ export function FaceMouth({
       }
       graphics.stroke({ color: "black", width: 2 });
     },
-    [scale, talking, talkingShape],
+    [vectorStyle, scale, talking, themeHex, colorRole, talkingShape],
   );
 
   useTick((time) => {

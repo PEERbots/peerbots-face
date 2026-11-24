@@ -48,7 +48,11 @@ describe("PeerbotsFaceStore (rendering + speech slices)", () => {
     store.getState().setAssetBaseUrl("/custom-assets/");
     expect(store.getState().assetBaseUrl).toBe("/custom-assets");
     const robotic = store.getState().selectedFace;
-    if (robotic.kind === "PixiFace" && robotic.type === "avatar") {
+    if (
+      robotic.kind === "PixiFace" &&
+      robotic.type === "avatar" &&
+      robotic.eyes.kind === "spritesheet"
+    ) {
       expect(robotic.eyes.path).toBe(
         "/custom-assets/Robotic/robotic_spritesheet.json",
       );

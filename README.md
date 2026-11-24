@@ -4,9 +4,10 @@ Canonical Peerbots Robot Face rendering engine, assets, viseme & amplitude synch
 
 ## Features
 
+- **Shared Vizij Extension Profile (`peerbots-face.v1.json`)**: Layered JSON profile (`public/FaceAssets/Profiles/peerbots-face.v1.json`) composed alongside `vizij-face` (`standard/vizij/*`) in `vizij-authoring`, enabling auto-connected theme color, amplitude lip-sync fallback, scene framing (zoom, offset, rotation), gaze, blink, conversation state, and FACS overrides across both PixiJS and Vizij.
 - **Dual Canonical Renderers + Pluggable Strategy (`FaceRendererStrategy`)**:
-  - `PixiFaceView`: PixiJS v8 2D sprite & vector renderer (`Hugo`, `Simple`, `Robotic`, `Display`) with spritesheet emotions, natural blinking & breathing, smooth gaze interpolation, and amplitude-driven mouth shapes.
-  - `VizijFaceView`: 3D WebAssembly skeletal & blendshape renderer (`Hugo - Expressive` and custom `.glb` uploads) powered by `@vizij/runtime-react`.
+  - `PixiFaceView`: PixiJS v8 2D parametric vector & sprite renderer (`Hugo`, `Mochi`, `Pebble`, `Dash`, `Orbit`, `Pulse`, `Pixel`, `Slate`, `Simple`, `Robotic`, `Display`) with smooth 60fps emotion morphing, natural + on-demand blinking, parallax gaze interpolation, single-color role theming (background vs. dark-visor accent), and emotion + amplitude blended mouths.
+  - `VizijFaceView`: 3D / 2D orthographic WebAssembly rig renderer (`Hugo - Expressive` and custom `.glb` uploads) powered by `@vizij/runtime-react`.
   - `StaticFaceFallback` & `FaceViewSkeleton`: Accessible ARIA-annotated fallback for headless browsers and WebGL-disabled environments with canonical sprite previews from `FaceAssets`.
 - **Zero Backend Lock-In**: Zero Firebase, Firestore, or PubNub dependencies. Inject remote TTS (e.g., AWS Polly) via `SpeechSynthesizerAdapter` while built-in Web Speech API synthesis and `TtsAudioCache` (in-memory LRU + IndexedDB) handle caching and fallback automatically.
 - **Modular Zustand Store Slices**: `createFaceRenderingSlice`, `createFaceSpeechSlice`, `createPeerbotsFaceStore`, `FaceStoreProvider`, and `useFaceStore`.
