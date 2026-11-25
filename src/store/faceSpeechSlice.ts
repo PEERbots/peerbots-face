@@ -144,6 +144,7 @@ export function createFaceSpeechSlice(
   const speechAudioManager = sliceOptions.audioManager ?? defaultAudioManager;
   const utteranceDeferMs = sliceOptions.utteranceDeferMs ?? 10;
 
+  const OBJECT_URL_REVOKE_DELAY_MS = 100;
   let activeAudio: HTMLAudioElement | null = null;
   let activeObjectUrl: string | null = null;
   let activeUtterance: SpeechSynthesisUtterance | null = null;
@@ -151,14 +152,26 @@ export function createFaceSpeechSlice(
   let activeBoundaryTimer: ReturnType<typeof setTimeout> | null = null;
   let activeGeneration = 0;
 
-  const revokeActiveObjectUrl = () => {
-    if (activeObjectUrl) {
-      try {
-        URL.revokeObjectURL(activeObjectUrl);
-      } catch (err) {
-        void err;
-      }
-      activeObjectUrl = null;
+  const revokeObjectUrlNow = (url: string) => {
+    try {
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      void err;
+    }
+  };
+
+  const revokeActiveObjectUrl = (defer = true) => {
+    if (!activeObjectUrl) {
+      return;
+    }
+    const urlToRevoke = activeObjectUrl;
+    activeObjectUrl = null;
+    if (defer) {
+      setTimeout(() => {
+        revokeObjectUrlNow(urlToRevoke);
+      }, OBJECT_URL_REVOKE_DELAY_MS);
+    } else {
+      revokeObjectUrlNow(urlToRevoke);
     }
   };
 

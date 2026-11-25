@@ -127,6 +127,72 @@ describe("AudioManager", () => {
     manager.reset();
     expect(manager.isUnlocked()).toBe(false);
   });
+
+  it("uses a genuine 16-bit signed PCM all-zero silent WAV (zero DC offset)", () => {
+    expect(SILENT_WAV_DATA_URI.startsWith("data:audio/wav;base64,")).toBe(true);
+    const b64 = SILENT_WAV_DATA_URI.slice("data:audio/wav;base64,".length);
+    const bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+    const view = new DataView(bytes.buffer);
+
+    const ascii = (start: number, len: number) =>
+      String.fromCharCode(...bytes.slice(start, start + len));
+
+    expect(ascii(0, 4)).toBe("RIFF");
+    expect(ascii(8, 4)).toBe("WAVE");
+    expect(ascii(12, 4)).toBe("fmt ");
+    expect(view.getUint16(20, true)).toBe(1); // PCM
+    expect(view.getUint16(22, true)).toBe(1); // Mono
+    expect(view.getUint16(34, true)).toBe(16); // 16-bit signed PCM
+    expect(ascii(36, 4)).toBe("data");
+
+    const dataSize = view.getUint32(40, true);
+    expect(dataSize).toBeGreaterThanOrEqual(2);
+    for (let offset = 44; offset < 44 + dataSize; offset += 2) {
+      expect(view.getInt16(offset, true)).toBe(0);
+    }
+  });
+
+  it("mutes the audio element during silent unlock priming and restores muted state afterward", async () => {
+    const mutedDuringPlay: boolean[] = [];
+    let shouldReject = false;
+
+    class FakeAudio {
+      public src = "";
+      public crossOrigin: string | null = null;
+      public preload = "";
+      public playsInline = false;
+      public paused = true;
+      public muted = false;
+      public currentTime = 0;
+      public setAttribute = vi.fn();
+      public pause = vi.fn();
+      public play = vi.fn(() => {
+        mutedDuringPlay.push(this.muted);
+        return shouldReject
+          ? Promise.reject(new Error("blocked"))
+          : Promise.resolve();
+      });
+    }
+
+    vi.stubGlobal("Audio", FakeAudio);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const manager = new AudioManager();
+    const audio = manager.getAudioElement()!;
+    audio.muted = false;
+
+    await manager.unlock();
+    expect(mutedDuringPlay).toEqual([true]);
+    expect(audio.muted).toBe(false);
+
+    // Also restores muted state if play() rejects
+    shouldReject = true;
+    audio.muted = false;
+    await manager.unlock();
+    expect(mutedDuringPlay).toEqual([true, true]);
+    expect(audio.muted).toBe(false);
+    expect(warnSpy).toHaveBeenCalled();
+  });
 });
 
 describe("AudioAnalyzer iOS and suspended AudioContext guards", () => {
@@ -307,5 +373,84 @@ describe("faceSpeechSlice persistent audio reuse and NotAllowedError recovery", 
     expect(store.getState().isSpeaking).toBe(false);
     // Must NOT fall through to Web Speech API on NotAllowedError
     expect(speakSpy).not.toHaveBeenCalled();
+  });
+
+  it("defers URL.revokeObjectURL after onended instead of revoking synchronously", async () => {
+    vi.useFakeTimers();
+    try {
+      const audioInstances: FakeAudio[] = [];
+
+      class FakeAudio {
+        public src = "";
+        public crossOrigin: string | null = null;
+        public preload = "";
+        public playsInline = false;
+        public paused = true;
+        public ended = false;
+        public muted = false;
+        public currentTime = 0;
+        public onplay: (() => void) | null = null;
+        public onended: (() => void) | null = null;
+        public onerror: (() => void) | null = null;
+        constructor() {
+          audioInstances.push(this);
+        }
+        public setAttribute = vi.fn();
+        public pause = vi.fn(() => {
+          this.paused = true;
+        });
+        public play = vi.fn(async () => {
+          this.paused = false;
+          this.onplay?.();
+        });
+      }
+
+      vi.stubGlobal("Audio", FakeAudio);
+      const createUrlSpy = vi
+        .spyOn(URL, "createObjectURL")
+        .mockReturnValue("blob:peerbots-test-voice-switch");
+      const revokeUrlSpy = vi
+        .spyOn(URL, "revokeObjectURL")
+        .mockImplementation(() => {});
+
+      const adapter: SpeechSynthesizerAdapter = {
+        id: "blob-adapter",
+        synthesizeSpeech: vi.fn(async () => ({
+          audioBlob: new Blob(["fake-audio"], { type: "audio/mpeg" }),
+          mimeType: "audio/mpeg",
+        })),
+      };
+
+      const store = createPeerbotsFaceStore({
+        speechAdapter: adapter,
+        ttsCache: false,
+        audioManager: new AudioManager(),
+        utteranceDeferMs: 0,
+      });
+
+      await store.getState().express({
+        title: "Switching voice",
+        speech: "Switching voice",
+        color: "Light Blue",
+        emotion: "Neutral",
+      });
+
+      expect(createUrlSpy).toHaveBeenCalledTimes(1);
+      expect(audioInstances).toHaveLength(1);
+
+      // Trigger onended — URL must NOT be revoked synchronously
+      audioInstances[0].ended = true;
+      audioInstances[0].onended?.();
+      expect(store.getState().isSpeaking).toBe(false);
+      expect(revokeUrlSpy).not.toHaveBeenCalled();
+
+      // After the ~100ms deferral window, the blob URL is revoked cleanly
+      vi.advanceTimersByTime(100);
+      expect(revokeUrlSpy).toHaveBeenCalledWith(
+        "blob:peerbots-test-voice-switch",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,7 +1,11 @@
+import { useEffect, useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "@peerbots/core";
 import { createPeerbotsFaceStore } from "../store/createPeerbotsFaceStore";
-import { FaceStoreProvider } from "../store/FaceStoreContext";
+import { FaceStoreProvider, useFaceStore } from "../store/FaceStoreContext";
 import { builtInFaces } from "../types/face";
+import { FaceAudioPrompt } from "./FaceAudioPrompt";
+import { FaceTester } from "./FaceTester";
 import { FaceView } from "./FaceView";
 
 const meta: Meta<typeof FaceView> = {
@@ -86,4 +90,112 @@ export const DisplayTextWithCaptions: Story = {
       </FaceStoreProvider>
     );
   },
+};
+
+const QUICK_PHRASES = [
+  "Hello! I am a Peerbot.",
+  "Switching voice",
+  "Let us learn together today!",
+];
+
+function SpeakPlaygroundControls() {
+  const lastMessage = useFaceStore((state) => state.lastMessage);
+  const speechAllowed = useFaceStore((state) => state.speechAllowed);
+  const isSpeaking = useFaceStore((state) => state.isSpeaking);
+  const setSpeechAllowed = useFaceStore((state) => state.setSpeechAllowed);
+  const updateLastMessage = useFaceStore((state) => state.updateLastMessage);
+  const stopSpeech = useFaceStore((state) => state.stopSpeech);
+  const refreshVoices = useFaceStore((state) => state.refreshVoices);
+
+  useEffect(() => {
+    void refreshVoices();
+  }, [refreshVoices]);
+
+  const speakMessage = (
+    next: Parameters<typeof updateLastMessage>[0],
+    sender = "storybook",
+  ) => {
+    // Clicking Speak / a quick phrase is already a user gesture, so avoid
+    // calling unlockAudio() (which primes speechSynthesis with an extra empty
+    // utterance) right before speaking the real utterance.
+    if (!speechAllowed && next.speech.trim().length > 0) {
+      setSpeechAllowed(true);
+    }
+    void updateLastMessage(next, sender);
+  };
+
+  return (
+    <div className="pbf:p-4 pbf:bg-white pbf:border-t pbf:border-slate-200 pbf:max-w-3xl pbf:mx-auto pbf:w-full">
+      <FaceTester onSendMessage={speakMessage} />
+      <div className="pbf:flex pbf:flex-wrap pbf:items-center pbf:gap-2 pbf:mt-3">
+        {QUICK_PHRASES.map((phrase) => (
+          <Button
+            key={phrase}
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              speakMessage({
+                ...lastMessage,
+                title: phrase,
+                speech: phrase,
+              })
+            }
+          >
+            {phrase}
+          </Button>
+        ))}
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!isSpeaking}
+          onClick={stopSpeech}
+        >
+          Stop
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SpeakPlaygroundStory() {
+  const store = useMemo(
+    () =>
+      createPeerbotsFaceStore({
+        isSilent: false,
+        initialFace: builtInFaces[0],
+        initialSettings: {
+          showFullScreenButton: true,
+          showScrollButton: true,
+          captions: {
+            enabled: true,
+            fontSize: 28,
+            style: "pill",
+            offset: { x: 0, y: 0 },
+          },
+        },
+        initialMessage: {
+          title: "Ready",
+          speech: "",
+          color: "Light Blue",
+          emotion: "Happy",
+        },
+      }),
+    [],
+  );
+
+  return (
+    <FaceStoreProvider store={store}>
+      <div className="pbf:flex pbf:flex-col pbf:w-full">
+        <div className="pbf:relative pbf:w-full pbf:h-[420px]">
+          <FaceAudioPrompt />
+          <FaceView />
+        </div>
+        <SpeakPlaygroundControls />
+      </div>
+    </FaceStoreProvider>
+  );
+}
+
+export const SpeakPlayground: Story = {
+  render: () => <SpeakPlaygroundStory />,
 };

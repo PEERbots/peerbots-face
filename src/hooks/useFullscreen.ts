@@ -69,7 +69,11 @@ export function useFullscreen(
       const fsEl = getFullscreenElement();
       const target = targetRef.current;
       const active = Boolean(
-        fsEl && (!target || fsEl === target || target.contains(fsEl)),
+        fsEl &&
+          (!target ||
+            fsEl === target ||
+            target.contains(fsEl) ||
+            fsEl.contains(target)),
       );
       setIsNativeFullscreen(active);
     };
@@ -138,7 +142,7 @@ export function useFullscreen(
   }, [isPseudoFullscreen]);
 
   const toggleFullscreen = useCallback(async () => {
-    if (isFullscreen) {
+    if (isFullscreen || Boolean(getFullscreenElement())) {
       await exitFullscreen();
     } else {
       await enterFullscreen();

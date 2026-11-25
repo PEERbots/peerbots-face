@@ -1,10 +1,11 @@
 /**
- * Minimal 44-byte silent PCM WAV (8kHz, 8-bit mono, 1 silent sample) encoded
- * as a data URI. Playing this inside a user gesture whitelists the persistent
- * HTMLAudioElement on Mobile Safari / iOS WebKit for subsequent async play().
+ * Minimal 46-byte silent 16-bit signed PCM WAV (8kHz mono, 1 all-zero sample,
+ * zero DC offset) encoded as a data URI. Playing this inside a user gesture
+ * whitelists the persistent HTMLAudioElement on Mobile Safari / iOS WebKit for
+ * subsequent async play() without producing an audible DC-step pop/click.
  */
 export const SILENT_WAV_DATA_URI =
-  "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+  "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==";
 
 export interface NavigatorLike {
   userAgent?: string;
@@ -110,41 +111,50 @@ export class AudioManager {
     const audio = this.getAudioElement();
     let audioPlayPromise: Promise<void> | null = null;
     if (audio) {
+      const shouldPrimeSilentWav = audio.paused || !audio.src;
+      const previousMuted = audio.muted;
+      const finishSilentPrime = () => {
+        if (audio.src === SILENT_WAV_DATA_URI) {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+          } catch (pauseErr) {
+            void pauseErr;
+          }
+        }
+        if (shouldPrimeSilentWav) {
+          audio.muted = previousMuted;
+        }
+      };
+
       try {
         // Only overwrite src if the element is not actively playing speech
-        if (audio.paused || !audio.src) {
+        if (shouldPrimeSilentWav) {
+          audio.muted = true;
           audio.src = SILENT_WAV_DATA_URI;
         }
         const playResult = audio.play();
         if (playResult && typeof playResult.then === "function") {
           audioPlayPromise = playResult.then(
             () => {
-              if (audio.src === SILENT_WAV_DATA_URI) {
-                try {
-                  audio.pause();
-                  audio.currentTime = 0;
-                } catch (pauseErr) {
-                  void pauseErr;
-                }
-              }
+              finishSilentPrime();
               anySucceeded = true;
             },
             (err) => {
+              if (shouldPrimeSilentWav) {
+                audio.muted = previousMuted;
+              }
               console.warn("AudioManager silent WAV unlock warning:", err);
             },
           );
         } else {
-          if (audio.src === SILENT_WAV_DATA_URI) {
-            try {
-              audio.pause();
-              audio.currentTime = 0;
-            } catch (pauseErr) {
-              void pauseErr;
-            }
-          }
+          finishSilentPrime();
           anySucceeded = true;
         }
       } catch (err) {
+        if (shouldPrimeSilentWav) {
+          audio.muted = previousMuted;
+        }
         console.warn("AudioManager audio element unlock warning:", err);
       }
     }

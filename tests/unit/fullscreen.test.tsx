@@ -180,6 +180,62 @@ describe("useFullscreen hook", () => {
     unmount();
     expect(document.body.style.overflow).toBe("auto");
   });
+
+  it("matches ancestor fullscreen elements in syncNative and exits native fullscreen in toggleFullscreen", async () => {
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.appendChild(child);
+
+    const exitSpy = vi.fn().mockImplementation(async () => {
+      Object.defineProperty(document, "fullscreenElement", {
+        configurable: true,
+        value: null,
+      });
+      document.dispatchEvent(new Event("fullscreenchange"));
+    });
+
+    Object.defineProperty(document, "exitFullscreen", {
+      configurable: true,
+      value: exitSpy,
+    });
+
+    const targetRef = { current: child };
+    const { result } = renderHook(() => useFullscreen(targetRef));
+    expect(result.current.isFullscreen).toBe(false);
+
+    // Ancestor enters fullscreen (e.g. FaceManager wrapper wrapping FaceView)
+    act(() => {
+      Object.defineProperty(document, "fullscreenElement", {
+        configurable: true,
+        value: parent,
+      });
+      document.dispatchEvent(new Event("fullscreenchange"));
+    });
+
+    expect(result.current.isFullscreen).toBe(true);
+
+    // Clicking toggleFullscreen exits native fullscreen
+    await act(async () => {
+      await result.current.toggleFullscreen();
+    });
+
+    expect(exitSpy).toHaveBeenCalledTimes(1);
+    expect(result.current.isFullscreen).toBe(false);
+
+    // Even if another element is fullscreen and local isFullscreen is false,
+    // toggleFullscreen still exits native fullscreen rather than trying to re-enter
+    const unrelated = document.createElement("div");
+    Object.defineProperty(document, "fullscreenElement", {
+      configurable: true,
+      value: unrelated,
+    });
+    expect(result.current.isFullscreen).toBe(false);
+
+    await act(async () => {
+      await result.current.toggleFullscreen();
+    });
+    expect(exitSpy).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("FaceView fullscreen integration", () => {
