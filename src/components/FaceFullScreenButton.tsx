@@ -55,11 +55,7 @@ export function FaceFullScreenButton() {
       onPointerDown={toggleFullScreen}
       hitArea={new Rectangle(0, 0, 50, 50)}
     >
-      <pixiGraphics
-        onPointerDown={toggleFullScreen}
-        eventMode="static"
-        draw={drawIcon}
-      />
+      <pixiGraphics eventMode="static" draw={drawIcon} />
     </pixiContainer>
   );
 }
