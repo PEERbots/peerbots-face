@@ -1,5 +1,14 @@
 # @peerbots/face
 
+## 0.4.1
+
+### Patch Changes
+
+- [#11](https://github.com/PEERbots/peerbots-face/pull/11) [`43b0efc`](https://github.com/PEERbots/peerbots-face/commit/43b0efc68d8d8c9a43606be96045a62646615f62) Thanks [@sbeleidy](https://github.com/sbeleidy)! - Fix two audio and fullscreen bugs:
+
+  - Replace `SILENT_WAV_DATA_URI` with a genuine 16-bit signed PCM all-zero silent WAV (zero DC offset), mute the audio element during silent unlock priming, and defer `URL.revokeObjectURL` after `onended` to eliminate the audible tap/pop after speech finishes.
+  - Match ancestor fullscreen elements in `useFullscreen`, exit native fullscreen in `toggleFullscreen` whenever a `fullscreenElement` is active, remove the duplicate `onPointerDown` handler on `<pixiGraphics>` in `FaceFullScreenButton` and `FaceScrollToTopButton`, and exit fullscreen before scrolling to top when clicking `FaceScrollToTopButton`.
+
 ## 0.4.0
 
 ### Minor Changes
