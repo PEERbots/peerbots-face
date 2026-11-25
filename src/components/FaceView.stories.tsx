@@ -102,7 +102,7 @@ function SpeakPlaygroundControls() {
   const lastMessage = useFaceStore((state) => state.lastMessage);
   const speechAllowed = useFaceStore((state) => state.speechAllowed);
   const isSpeaking = useFaceStore((state) => state.isSpeaking);
-  const unlockAudio = useFaceStore((state) => state.unlockAudio);
+  const setSpeechAllowed = useFaceStore((state) => state.setSpeechAllowed);
   const updateLastMessage = useFaceStore((state) => state.updateLastMessage);
   const stopSpeech = useFaceStore((state) => state.stopSpeech);
   const refreshVoices = useFaceStore((state) => state.refreshVoices);
@@ -115,11 +115,11 @@ function SpeakPlaygroundControls() {
     next: Parameters<typeof updateLastMessage>[0],
     sender = "storybook",
   ) => {
+    // Clicking Speak / a quick phrase is already a user gesture, so avoid
+    // calling unlockAudio() (which primes speechSynthesis with an extra empty
+    // utterance) right before speaking the real utterance.
     if (!speechAllowed && next.speech.trim().length > 0) {
-      void unlockAudio().finally(() => {
-        void updateLastMessage(next, sender);
-      });
-      return;
+      setSpeechAllowed(true);
     }
     void updateLastMessage(next, sender);
   };
