@@ -46,6 +46,9 @@ export function CharacterSelectionControls({
   const setFace = useFaceStore((state) => state.setFace);
   const setFaceSettings = useFaceStore((state) => state.setFaceSettings);
   const triggerBlink = useFaceStore((state) => state.triggerBlink);
+  const vizijConnectionReport = useFaceStore(
+    (state) => state.vizijConnectionReport,
+  );
   const speechAllowed = useFaceStore((state) => state.speechAllowed);
   const unlockAudio = useFaceStore((state) => state.unlockAudio);
 
@@ -135,8 +138,9 @@ export function CharacterSelectionControls({
                   const url = URL.createObjectURL(file);
                   const updatedFace: VizijFace = {
                     ...selectedFace,
+                    glb: url,
                     assetBundle: {
-                      ...selectedFace.assetBundle,
+                      namespace: selectedFace.assetBundle?.namespace ?? "custom",
                       glb: {
                         kind: "url",
                         src: url,
@@ -419,8 +423,43 @@ export function CharacterSelectionControls({
               </div>
               <div className="pbf:flex pbf:items-center pbf:justify-between">
                 <span className="pbf:text-slate-600">Profile Contract</span>
-                <span className="pbf:font-mono">vizij-face + peerbots-face v1</span>
+                <span className="pbf:font-mono">peerbots-face v1 + vizij-face</span>
               </div>
+              {selectedFace.kind === "Vizij" && vizijConnectionReport && (
+                <div
+                  className="pbf:rounded pbf:bg-slate-50 pbf:border pbf:border-slate-200 pbf:p-2 pbf:space-y-1"
+                  data-testid="vizij-connection-report"
+                >
+                  <div className="pbf:font-semibold pbf:text-slate-700">
+                    GLB Auto-Connection
+                  </div>
+                  <div className="pbf:grid pbf:grid-cols-2 pbf:gap-x-2 pbf:gap-y-0.5 pbf:text-[11px]">
+                    <span>
+                      Emotions: {vizijConnectionReport.emotions.connected}/
+                      {vizijConnectionReport.emotions.total}
+                    </span>
+                    <span>
+                      Visemes: {vizijConnectionReport.visemes.connected}/
+                      {vizijConnectionReport.visemes.total}
+                    </span>
+                    <span>
+                      Color: {vizijConnectionReport.color ? "Bound" : "Backdrop"}
+                    </span>
+                    <span>
+                      Gaze: {vizijConnectionReport.gaze ? "Bound" : "None"}
+                    </span>
+                    <span>
+                      Blink: {vizijConnectionReport.blink ? "Bound" : "None"}
+                    </span>
+                    <span>
+                      Rotation:{" "}
+                      {vizijConnectionReport.sceneTransform.rotation
+                        ? "Rig"
+                        : "Unbound"}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="pbf:pt-1">
                 <Button
                   variant="outline"

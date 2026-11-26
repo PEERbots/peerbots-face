@@ -1,4 +1,5 @@
 import type { TimedViseme } from "../types/face";
+import type { VizijStandardViseme } from "../types/profile";
 
 export type PollyViseme =
   | "@"
@@ -41,6 +42,34 @@ export const pollyVisemeToVizijPath: Record<PollyViseme, string> = {
   sil: "",
 };
 
+/**
+ * Maps AWS Polly viseme marks to the 15-shape Oculus/Meta vocabulary used by
+ * the Vizij 1.0 Face Standard (`standard/vizij/viseme/<shape>`).
+ */
+export const pollyVisemeToStandardViseme: Record<
+  PollyViseme,
+  VizijStandardViseme
+> = {
+  "@": "aa",
+  a: "aa",
+  e: "E",
+  E: "E",
+  f: "FF",
+  i: "ih",
+  k: "kk",
+  l: "nn",
+  o: "oh",
+  O: "oh",
+  p: "PP",
+  r: "RR",
+  s: "SS",
+  S: "CH",
+  t: "DD",
+  T: "TH",
+  u: "ou",
+  sil: "sil",
+};
+
 export const possiblePollyVisemes: string[] = Array.from(
   new Set(Object.values(pollyVisemeToVizijPath).filter((v) => v.length > 0)),
 );
@@ -50,6 +79,13 @@ export function mapVisemeToVizijTarget(viseme: string): string {
     return pollyVisemeToVizijPath[viseme as PollyViseme];
   }
   return "";
+}
+
+export function mapVisemeToStandardViseme(viseme: string): VizijStandardViseme {
+  if (Object.prototype.hasOwnProperty.call(pollyVisemeToStandardViseme, viseme)) {
+    return pollyVisemeToStandardViseme[viseme as PollyViseme];
+  }
+  return "sil";
 }
 
 const CHAR_TO_POLLY_VISEME: Record<string, PollyViseme> = {

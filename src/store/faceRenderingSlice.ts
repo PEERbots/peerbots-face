@@ -10,6 +10,7 @@ import {
 } from "../types/face";
 import type {
   FacsOverrides,
+  ProfileConnectionReport,
   VizijStandardExpression,
 } from "../types/profile";
 
@@ -28,6 +29,7 @@ export interface FaceRenderingSlice {
   blinkNonce: number;
   extendedExpression: VizijStandardExpression | null;
   facsOverrides: FacsOverrides;
+  vizijConnectionReport: ProfileConnectionReport | null;
   setFace: (face: Face) => void;
   setFaceByName: (name: string) => void;
   setFaceSettings: (settings: Partial<FaceSettings>) => void;
@@ -36,6 +38,7 @@ export interface FaceRenderingSlice {
   triggerBlink: () => void;
   setExtendedExpression: (expression: VizijStandardExpression | null) => void;
   setFacsOverrides: (overrides: FacsOverrides) => void;
+  setVizijConnectionReport: (report: ProfileConnectionReport | null) => void;
   setLanguage: (lang: string | null) => void;
   setAssetBaseUrl: (assetBaseUrl: string) => void;
 }
@@ -123,15 +126,16 @@ export function createFaceRenderingSlice(
     blinkNonce: 0,
     extendedExpression: null,
     facsOverrides: {},
+    vizijConnectionReport: null,
 
     setFace: (face) => {
-      set({ selectedFace: face });
+      set({ selectedFace: face, vizijConnectionReport: null });
     },
 
     setFaceByName: (name) => {
       const found = get().availableFaces.find((f) => f.name === name);
       if (found) {
-        set({ selectedFace: found });
+        set({ selectedFace: found, vizijConnectionReport: null });
       }
     },
 
@@ -178,6 +182,10 @@ export function createFaceRenderingSlice(
         }
       }
       set({ facsOverrides: clamped });
+    },
+
+    setVizijConnectionReport: (vizijConnectionReport) => {
+      set({ vizijConnectionReport });
     },
 
     setLanguage: (lang) => {

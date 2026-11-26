@@ -57,6 +57,11 @@ const config: StorybookConfig = {
     viteConfig.build.rollupOptions.external = Array.isArray(existingExternal)
       ? [...existingExternal, ...flowExternals]
       : flowExternals;
+    viteConfig.optimizeDeps = viteConfig.optimizeDeps ?? {};
+    viteConfig.optimizeDeps.exclude = [
+      ...(viteConfig.optimizeDeps.exclude ?? []),
+      "@vizij/runtime",
+    ];
     return viteConfig;
   },
 };

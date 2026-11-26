@@ -1,24 +1,34 @@
-import { Suspense, useEffect, useCallback } from "react";
+import { Suspense, useEffect, useCallback, useRef, useState } from "react";
+import { VizijCanvas } from "@vizij/render";
 import {
+  useAnimateValue,
   useVizijRuntime,
   VizijRuntimeFace,
   VizijRuntimeProvider,
 } from "@vizij/runtime-react";
 import { useFaceStore } from "../store/FaceStoreContext";
 import {
+  mapVisemeToStandardViseme,
   pollyVisemeToVizijPath,
   possiblePollyVisemes,
   type PollyViseme,
 } from "../helpers/viseme_mapper";
 import { color_mapping, hexToRgb } from "../helpers/color_mappers";
-import type { PeerbotsColor, PeerbotsEmotion } from "../types/face";
+import { resolveVizijGlbSource } from "../types/face";
+import {
+  PEERBOTS_PROFILE_KEYS,
+  VIZIJ_STANDARD_KEYS,
+  VIZIJ_STANDARD_VISEMES,
+  buildProfileControlValues,
+  inspectGlbProfileConnection,
+} from "../types/profile";
 import { resolveFaceUiLabels, type FaceUiLabels } from "../types/labels";
 
 function VizijFallback({ labels }: { labels: FaceUiLabels }) {
-  const { loading, error, ready } = useVizijRuntime();
+  const { status, error } = useVizijRuntime();
   return (
     <div className="pbf:flex pbf:items-center pbf:justify-center pbf:w-full pbf:h-full pbf:text-white pbf:bg-slate-900 pbf:p-4 pbf:text-sm">
-      {(loading || !ready) && !error && <div>{labels.loading}</div>}
+      {status === "loading" && !error && <div>{labels.loading}</div>}
       {error && (
         <div>
           {labels.vizijErrorPrefix} {error.message}
@@ -28,158 +38,352 @@ function VizijFallback({ labels }: { labels: FaceUiLabels }) {
   );
 }
 
+const ANIMATED_KEY_PREFIXES = [
+  "peerbots/expression/",
+  "standard/vizij/expression/",
+  "peerbots/color/",
+  "background/color/",
+  "peerbots/gaze/",
+  "standard/vizij/gaze/",
+  "standard/vizij/left_eye/",
+  "standard/vizij/right_eye/",
+  "standard/vizij/face/",
+];
+
+function shouldAnimateKey(relativePath: string): boolean {
+  return ANIMATED_KEY_PREFIXES.some((prefix) =>
+    relativePath.startsWith(prefix),
+  );
+}
+
 function VizijPoseSetter() {
-  const { ready, animateValue, faceId, setInput } = useVizijRuntime();
+  const { runtime, status, description } = useVizijRuntime();
+  const { animateValue } = useAnimateValue();
+
   const settings = useFaceStore((state) => state.faceSettings);
   const lastMessage = useFaceStore((state) => state.lastMessage);
   const selectedFace = useFaceStore((state) => state.selectedFace);
+  const gaze = useFaceStore((state) => state.gaze);
+  const blinkNonce = useFaceStore((state) => state.blinkNonce);
+  const extendedExpression = useFaceStore((state) => state.extendedExpression);
+  const facsOverrides = useFaceStore((state) => state.facsOverrides);
+  const isSpeaking = useFaceStore((state) => state.isSpeaking);
+  const currentAmplitude = useFaceStore((state) => state.currentAmplitude);
   const spokenVisemes = useFaceStore((state) => state.spokenVisemes);
-
-  const expressEmotion = useCallback(
-    (emotion: PeerbotsEmotion) => {
-      const expressivity = settings.vizijSettings?.faceExpressivity ?? 1;
-      void animateValue(
-        `rig/${faceId}/emotions/surprise.weight`,
-        (emotion === "Surprised" ? 1 : 0) * expressivity,
-        { duration: 0.2 },
-      );
-      void animateValue(
-        `rig/${faceId}/emotions/happy.weight`,
-        (emotion === "Happy" ? 1 : 0) * expressivity,
-        { duration: 0.2 },
-      );
-      void animateValue(
-        `rig/${faceId}/emotions/sad.weight`,
-        (emotion === "Sad" ? 1 : 0) * expressivity,
-        { duration: 0.2 },
-      );
-      void animateValue(
-        `rig/${faceId}/emotions/concerned.weight`,
-        (emotion === "Concerned" ? 1 : 0) * expressivity,
-        { duration: 0.2 },
-      );
-      void animateValue(
-        `rig/${faceId}/emotions/sleepy.weight`,
-        (emotion === "Sleepy" ? 1 : 0) * expressivity,
-        { duration: 0.2 },
-      );
-    },
-    [animateValue, faceId, settings.vizijSettings?.faceExpressivity],
+  const setVizijConnectionReport = useFaceStore(
+    (state) => state.setVizijConnectionReport,
   );
 
-  const expressColor = useCallback(
-    (color: PeerbotsColor) => {
-      const rgbColor = hexToRgb(color_mapping[color]) ?? {
-        r: 0,
-        g: 0,
-        b: 0,
-      };
-      void animateValue(`rig/${faceId}/background/color/r`, rgbColor.r / 255, {
-        duration: 0.2,
-      });
-      void animateValue(`rig/${faceId}/background/color/g`, rgbColor.g / 255, {
-        duration: 0.2,
-      });
-      void animateValue(`rig/${faceId}/background/color/b`, rgbColor.b / 255, {
-        duration: 0.2,
-      });
+  const [availableKeys, setAvailableKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const prevBlinkNonceRef = useRef(blinkNonce);
+  const isReady = status === "ready" && runtime !== null;
+
+  // Inspect loaded GLB keys once ready and report auto-connection status to the store
+  useEffect(() => {
+    if (!isReady || !runtime) return;
+    let cancelled = false;
+
+    async function inspectKeys() {
+      if (!runtime) return;
+      try {
+        const listed = await runtime.listKeys();
+        if (cancelled) return;
+        const paths = listed.map((k) => k.path);
+        const keySet = new Set(paths);
+        setAvailableKeys(keySet);
+
+        const declaredProfiles = Array.isArray(description?.metadata?.profiles)
+          ? (description.metadata.profiles as string[])
+          : [];
+        const report = inspectGlbProfileConnection(paths, declaredProfiles);
+        setVizijConnectionReport(report);
+      } catch (err) {
+        console.warn("Failed to inspect Vizij runtime keys:", err);
+      }
+    }
+
+    void inspectKeys();
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, runtime, description, setVizijConnectionReport]);
+
+  // Helper to resolve a relative key path if present in the loaded Vizij device
+  const resolveBoundPath = useCallback(
+    (relativePath: string): string | null => {
+      if (!runtime) return null;
+      const prefixed = runtime.path(relativePath);
+      if (availableKeys.has(prefixed)) return prefixed;
+      if (availableKeys.has(relativePath)) return relativePath;
+      return null;
     },
-    [faceId, animateValue],
+    [runtime, availableKeys],
   );
 
+  // Apply unified peerbots-face + vizij-face + legacy fallback controls
+  useEffect(() => {
+    if (!isReady || !runtime || availableKeys.size === 0) return;
+
+    const controlValues = buildProfileControlValues({
+      message: lastMessage,
+      gaze,
+      settings,
+      isSpeaking,
+      currentAmplitude,
+      extendedExpression,
+      facsOverrides,
+    });
+
+    for (const [relativePath, value] of Object.entries(controlValues)) {
+      const targetPath = resolveBoundPath(relativePath);
+      if (!targetPath) continue;
+      if (shouldAnimateKey(relativePath)) {
+        void animateValue(targetPath, value, { duration: 0.22 }).catch(
+          () => undefined,
+        );
+      } else {
+        void runtime.setValue(targetPath, value);
+      }
+    }
+
+    // Legacy pre-1.0 fallback keys (emotions/*.weight, background/color/*, scene/*)
+    const expressivity = settings.vizijSettings?.faceExpressivity ?? 1;
+    const legacyEmotions: Record<string, boolean> = {
+      surprise: lastMessage.emotion === "Surprised",
+      happy: lastMessage.emotion === "Happy",
+      sad: lastMessage.emotion === "Sad",
+      concerned: lastMessage.emotion === "Concerned",
+      sleepy: lastMessage.emotion === "Sleepy",
+    };
+    for (const [key, active] of Object.entries(legacyEmotions)) {
+      const legacyPath = resolveBoundPath(`emotions/${key}.weight`);
+      if (legacyPath) {
+        void animateValue(legacyPath, (active ? 1 : 0) * expressivity, {
+          duration: 0.2,
+        }).catch(() => undefined);
+      }
+    }
+
+    const rgb = hexToRgb(
+      color_mapping[lastMessage.color] ?? color_mapping["Light Blue"],
+    ) ?? { r: 171, g: 227, b: 250 };
+    const legacyColorMap: Record<string, number> = {
+      "background/color/r": rgb.r / 255,
+      "background/color/g": rgb.g / 255,
+      "background/color/b": rgb.b / 255,
+    };
+    for (const [rel, val] of Object.entries(legacyColorMap)) {
+      const legacyPath = resolveBoundPath(rel);
+      if (legacyPath) {
+        void animateValue(legacyPath, val, { duration: 0.2 }).catch(
+          () => undefined,
+        );
+      }
+    }
+
+    if (selectedFace?.kind === "Vizij") {
+      const legacyScaleX = resolveBoundPath("scene/scale/x");
+      const legacyScaleY = resolveBoundPath("scene/scale/y");
+      const legacyTransX = resolveBoundPath("scene/translation/x");
+      const legacyTransY = resolveBoundPath("scene/translation/y");
+      if (legacyScaleX) void runtime.setValue(legacyScaleX, settings.zoom);
+      if (legacyScaleY) void runtime.setValue(legacyScaleY, settings.zoom);
+      if (legacyTransX) {
+        void runtime.setValue(legacyTransX, (settings.offset?.x ?? 0) / 620 - 1);
+      }
+      if (legacyTransY) {
+        void runtime.setValue(legacyTransY, (settings.offset?.y ?? 0) / 144 + 1);
+      }
+    }
+  }, [
+    isReady,
+    runtime,
+    availableKeys,
+    lastMessage,
+    gaze,
+    settings,
+    isSpeaking,
+    currentAmplitude,
+    extendedExpression,
+    facsOverrides,
+    selectedFace?.kind,
+    resolveBoundPath,
+    animateValue,
+  ]);
+
+  // Smooth ~200ms blink envelope on triggerBlink()
+  useEffect(() => {
+    if (blinkNonce === prevBlinkNonceRef.current) return;
+    prevBlinkNonceRef.current = blinkNonce;
+    if (!isReady || !runtime) return;
+
+    const blinkPaths = [
+      resolveBoundPath(PEERBOTS_PROFILE_KEYS.blink),
+      resolveBoundPath(VIZIJ_STANDARD_KEYS.blink),
+    ].filter((p): p is string => p !== null);
+
+    if (blinkPaths.length === 0) return;
+
+    void Promise.all(
+      blinkPaths.map(async (path) => {
+        await animateValue(path, 1, { duration: 0.08, easing: "easeIn" }).catch(
+          () => undefined,
+        );
+        await animateValue(path, 0, { duration: 0.12, easing: "easeOut" }).catch(
+          () => undefined,
+        );
+      }),
+    );
+  }, [blinkNonce, isReady, runtime, resolveBoundPath, animateValue]);
+
+  // Timed viseme playback (supports both Vizij 1.0 15-viseme standard and legacy visemes/*)
   const expressViseme = useCallback(
     (viseme: PollyViseme, durationSec: number, prevViseme?: PollyViseme) => {
-      const visemeVizijPath = pollyVisemeToVizijPath[viseme];
       const promises: Promise<void>[] = [];
+      const standardShape = mapVisemeToStandardViseme(viseme);
+      const hasStandardVisemes =
+        resolveBoundPath(VIZIJ_STANDARD_KEYS.viseme("aa")) !== null;
 
+      if (hasStandardVisemes) {
+        if (viseme === "sil") {
+          for (const shape of VIZIJ_STANDARD_VISEMES) {
+            if (shape === "sil") continue;
+            const path = resolveBoundPath(VIZIJ_STANDARD_KEYS.viseme(shape));
+            if (path) {
+              promises.push(
+                animateValue(path, 0, { duration: durationSec }).catch(
+                  () => undefined,
+                ),
+              );
+            }
+          }
+        } else {
+          const path = resolveBoundPath(
+            VIZIJ_STANDARD_KEYS.viseme(standardShape),
+          );
+          if (path) {
+            promises.push(
+              animateValue(path, 1, { duration: durationSec }).catch(
+                () => undefined,
+              ),
+            );
+          }
+          if (prevViseme) {
+            const prevShape = mapVisemeToStandardViseme(prevViseme);
+            if (prevShape !== standardShape && prevShape !== "sil") {
+              const prevPath = resolveBoundPath(
+                VIZIJ_STANDARD_KEYS.viseme(prevShape),
+              );
+              if (prevPath) {
+                promises.push(
+                  animateValue(prevPath, 0, { duration: durationSec }).catch(
+                    () => undefined,
+                  ),
+                );
+              }
+            }
+          }
+        }
+        return Promise.all(promises);
+      }
+
+      // Legacy pre-1.0 visemes/<target>.weight fallback
+      const visemeVizijPath = pollyVisemeToVizijPath[viseme];
       if (viseme === "sil") {
         possiblePollyVisemes.forEach((target) => {
-          promises.push(
-            animateValue(`rig/${faceId}/visemes/${target}.weight`, 0, {
-              duration: durationSec,
-            }) as Promise<void>,
-          );
+          const path = resolveBoundPath(`visemes/${target}.weight`);
+          if (path) {
+            promises.push(
+              animateValue(path, 0, { duration: durationSec }).catch(
+                () => undefined,
+              ),
+            );
+          }
         });
       } else if (visemeVizijPath) {
-        promises.push(
-          animateValue(`rig/${faceId}/visemes/${visemeVizijPath}.weight`, 1, {
-            duration: durationSec,
-          }) as Promise<void>,
-        );
-
+        const path = resolveBoundPath(`visemes/${visemeVizijPath}.weight`);
+        if (path) {
+          promises.push(
+            animateValue(path, 1, { duration: durationSec }).catch(
+              () => undefined,
+            ),
+          );
+        }
         if (prevViseme) {
-          const prevMappedViseme = pollyVisemeToVizijPath[prevViseme];
-          if (prevMappedViseme && prevMappedViseme !== visemeVizijPath) {
-            promises.push(
-              animateValue(
-                `rig/${faceId}/visemes/${prevMappedViseme}.weight`,
-                0,
-                { duration: durationSec },
-              ) as Promise<void>,
-            );
+          const prevMapped = pollyVisemeToVizijPath[prevViseme];
+          if (prevMapped && prevMapped !== visemeVizijPath) {
+            const prevPath = resolveBoundPath(`visemes/${prevMapped}.weight`);
+            if (prevPath) {
+              promises.push(
+                animateValue(prevPath, 0, { duration: durationSec }).catch(
+                  () => undefined,
+                ),
+              );
+            }
           }
         }
       }
       return Promise.all(promises);
     },
-    [animateValue, faceId],
+    [animateValue, resolveBoundPath],
   );
 
-  const expressTimedVisemes = useCallback(
-    async (visemes: { value: string; time: number }[]) => {
-      let prevViseme: PollyViseme | undefined;
-      for (const viseme of visemes) {
-        const visemeValue = viseme.value as PollyViseme;
-        await expressViseme(visemeValue, viseme.time, prevViseme);
-        prevViseme = visemeValue;
+  useEffect(() => {
+    if (!isReady || availableKeys.size === 0) return;
+
+    if (!spokenVisemes || spokenVisemes.length === 0) {
+      void expressViseme("sil", 0.08);
+      return;
+    }
+
+    let cancelled = false;
+    async function runVisemes() {
+      if (!spokenVisemes) return;
+      // Single viseme with time === 0 holds that pose for interactive viseme inspection
+      if (spokenVisemes.length === 1 && spokenVisemes[0].time === 0) {
+        const val = spokenVisemes[0].value as PollyViseme;
+        await expressViseme("sil", 0.06);
+        if (!cancelled && val !== "sil") {
+          await expressViseme(val, 0.12);
+        }
+        return;
       }
-    },
-    [expressViseme],
-  );
-
-  useEffect(() => {
-    if (ready) {
-      expressColor(lastMessage.color);
-      expressEmotion(lastMessage.emotion);
+      let prevViseme: PollyViseme | undefined;
+      let prevTime = 0;
+      for (const viseme of spokenVisemes) {
+        if (cancelled) return;
+        const val = viseme.value as PollyViseme;
+        const deltaSec = Math.max(
+          0.04,
+          Math.min(0.28, viseme.time - prevTime),
+        );
+        prevTime = viseme.time;
+        await expressViseme(val, deltaSec, prevViseme);
+        prevViseme = val;
+      }
+      if (!cancelled) {
+        await expressViseme("sil", 0.08, prevViseme);
+      }
     }
-  }, [
-    ready,
-    lastMessage.color,
-    lastMessage.emotion,
-    expressColor,
-    expressEmotion,
-  ]);
+    void runVisemes();
+    return () => {
+      cancelled = true;
+      void expressViseme("sil", 0.06);
+    };
+  }, [spokenVisemes, isReady, availableKeys, expressViseme]);
 
+  // Ensure mouth returns cleanly to closed (sil) when speech finishes
   useEffect(() => {
-    if (ready && selectedFace?.kind === "Vizij") {
-      setInput(`rig/${faceId}/scene/scale/x`, settings.zoom);
-      setInput(`rig/${faceId}/scene/scale/y`, settings.zoom);
-      setInput(
-        `rig/${faceId}/scene/translation/x`,
-        (settings.offset?.x ?? 0) / 620 - 1,
-      );
-      setInput(
-        `rig/${faceId}/scene/translation/y`,
-        (settings.offset?.y ?? 0) / 144 + 1,
-      );
+    if (!isReady || availableKeys.size === 0) return;
+    if (!isSpeaking) {
+      void expressViseme("sil", 0.08);
     }
-  }, [ready, selectedFace?.kind, faceId, setInput, settings]);
-
-  useEffect(() => {
-    if (spokenVisemes !== null && ready) {
-      void expressTimedVisemes(spokenVisemes);
-    }
-  }, [spokenVisemes, ready, expressTimedVisemes]);
+  }, [isSpeaking, isReady, availableKeys, expressViseme]);
 
   return null;
 }
-
-const ROTATION_CLASS: Record<0 | 90 | 180 | 270, string> = {
-  0: "pbf:rotate-0 pbf:w-full pbf:h-full",
-  90: "pbf:rotate-90 pbf:w-full pbf:h-full",
-  180: "pbf:rotate-180 pbf:w-full pbf:h-full",
-  270: "pbf:rotate-270 pbf:w-full pbf:h-full",
-};
 
 export interface VizijFaceViewProps {
   labels?: Partial<FaceUiLabels>;
@@ -189,30 +393,44 @@ export function VizijFaceView({ labels }: VizijFaceViewProps = {}) {
   const uiLabels = resolveFaceUiLabels(labels);
   const selectedFace = useFaceStore((state) => state.selectedFace);
   const settings = useFaceStore((state) => state.faceSettings);
+  const lastMessage = useFaceStore((state) => state.lastMessage);
+  const connectionReport = useFaceStore((state) => state.vizijConnectionReport);
 
   if (selectedFace?.kind !== "Vizij") {
     return null;
   }
 
-  const normalizedRot = (((settings.rotation % 360) + 360) % 360) as
-    | 0
-    | 90
-    | 180
-    | 270;
-  const rotClass = ROTATION_CLASS[normalizedRot] ?? ROTATION_CLASS[0];
-  const glb = selectedFace.assetBundle?.glb;
-  const hasGlbUrl =
-    Boolean(glb) && "kind" in glb && glb.kind === "url" && Boolean(glb.src);
+  const glbSource = resolveVizijGlbSource(selectedFace);
+  const glbKey =
+    typeof glbSource === "string" ? glbSource : `${selectedFace.name}-blob`;
+  const backdropColor =
+    connectionReport && !connectionReport.color
+      ? (color_mapping[lastMessage.color] ?? color_mapping["Light Blue"])
+      : undefined;
+
+  const hasRigScale = Boolean(connectionReport?.sceneTransform.scale);
+  const slotZoom = hasRigScale ? 1 : settings.zoom;
 
   return (
-    <div className={rotClass} data-testid="vizij-face-view">
-      {hasGlbUrl ? (
-        <VizijRuntimeProvider assetBundle={selectedFace.assetBundle} autostart>
-          <Suspense fallback={<VizijFallback labels={uiLabels} />}>
-            <VizijRuntimeFace className="pbf:bg-black pbf:w-full pbf:h-full" />
-            <VizijPoseSetter />
-          </Suspense>
-        </VizijRuntimeProvider>
+    <div
+      className="pbf:w-full pbf:h-full pbf:relative pbf:overflow-hidden"
+      style={backdropColor ? { backgroundColor: backdropColor } : undefined}
+      data-testid="vizij-face-view"
+    >
+      {glbSource ? (
+        <>
+          <VizijCanvas />
+          <VizijRuntimeProvider key={glbKey} glb={glbSource}>
+            <Suspense fallback={<VizijFallback labels={uiLabels} />}>
+              <VizijRuntimeFace
+                className="pbf:w-full pbf:h-full"
+                fit="contain"
+                zoom={slotZoom}
+              />
+              <VizijPoseSetter />
+            </Suspense>
+          </VizijRuntimeProvider>
+        </>
       ) : (
         <div className="pbf:flex pbf:items-center pbf:justify-center pbf:h-full pbf:text-white pbf:bg-slate-900 pbf:p-4 pbf:text-sm">
           {uiLabels.vizijUploadGlb}
