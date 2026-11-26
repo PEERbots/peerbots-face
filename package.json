@@ -1,6 +1,6 @@
 {
   "name": "@peerbots/face",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Canonical Peerbots Robot Face rendering engine, assets, viseme sync, TTS audio cache, and modular Zustand slices.",
   "type": "module",
   "license": "GPL-3.0-only",
