@@ -1,5 +1,11 @@
 # @peerbots/face
 
+## 0.4.2
+
+### Patch Changes
+
+- [#13](https://github.com/PEERbots/peerbots-face/pull/13) [`e334634`](https://github.com/PEERbots/peerbots-face/commit/e3346349f435c5c646206f9686db4cdee836315e) Thanks [@sbeleidy](https://github.com/sbeleidy)! - Declare `"sideEffects": ["**/*.css"]` in `package.json` so bundlers can tree-shake unused exports when consumers import lightweight helpers or types from `@peerbots/face`.
+
 ## 0.4.1
 
 ### Patch Changes
